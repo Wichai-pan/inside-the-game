@@ -3,3 +3,5 @@ agent-framework-ollama==1.0.0b261022
 ollama==0.5.3
 httpx==0.28.1
 anyio==4.15.1
+kloppy==3.19.1
+databallpy==0.8.1

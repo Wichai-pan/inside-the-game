@@ -8,6 +8,7 @@ import math
 
 HALF_X = 52.5
 WINDOW = 60.0  # seconds used for "recent" possession share and pressure counts
+OFF_BALL = ("pressure", "foul", "clearance")  # do not by themselves give a team possession
 
 
 def _dist(a, b):
@@ -32,6 +33,7 @@ class Analyst:
         self.players = {p["id"]: p for p in match["players"]}
         self.index = {p["id"]: i for i, p in enumerate(match["players"])}
         self.teams = {t["id"]: t for t in match["teams"]}
+        self.t0 = match.get("t0", 0)  # match clock at the start of the clip
 
     # -- names and positions -------------------------------------------------------------
     def name(self, pid):
@@ -72,8 +74,9 @@ class Analyst:
         elif e["kind"] == "shot":
             start, end = (e["x"], e["y"]), (e["end_x"], e["end_y"])
             flight = max(e["end_t"] - e["t"], 0.05)
+            speed = e.get("shot_speed_ms") or _dist(start, end) / flight  # measured from tracking when available
             out = {"distance_m": round(_dist(start, (HALF_X * d, 0))),
-                   "shot_speed_kmh": round(_dist(start, end) / flight * 3.6),
+                   "shot_speed_kmh": round(speed * 3.6),
                    "xg": e["xg"], "under_pressure": pressed}
         elif e["kind"] in ("interception", "tackle"):
             out = {"metres_from_goal": round(HALF_X - e["x"] * d),
@@ -89,18 +92,27 @@ class Analyst:
         k = e["kind"]
         if k == "pass":
             ok = e["outcome"] == "complete"
-            en = (f"{a} ({team}) passes to {tgt}: {'complete' if ok else 'cut out'}, "
+            sp_en = {"kickoff": "From the kick-off, ", "throw_in": "From a throw-in, ", "free_kick": "From a free kick, ",
+                     "corner": "From a corner, ", "goal_kick": "From a goal kick, "}.get(e.get("set_piece"), "")
+            sp_zh = {"kickoff": "开球后，", "throw_in": "掷界外球，", "free_kick": "任意球，", "corner": "角球，",
+                     "goal_kick": "球门球，"}.get(e.get("set_piece"), "")
+            verb_en, verb_zh = ("crosses", "传中") if e.get("cross") else ("passes", "传球")
+            to_en, to_zh = (f" to {tgt}", f"给{tgt}") if tgt else ("", "")
+            en = (f"{sp_en}{a} ({team}) {verb_en}{to_en}: {'complete' if ok else 'cut out'}, "
                   f"{mt['length_m']} m at {mt['ball_speed_kmh']} km/h, difficulty {mt['difficulty']}/100")
-            zh = (f"{a}（{team}）传给{tgt}，{'成功' if ok else '被断'}，"
+            zh = (f"{sp_zh}{a}（{team}）{verb_zh}{to_zh}，{'成功' if ok else '未成功'}，"
                   f"{mt['length_m']}米，球速{mt['ball_speed_kmh']}公里/小时，难度{mt['difficulty']}/100")
         elif k == "shot":
             res_en = {"goal": "GOAL", "saved": f"saved by {self.name(e.get('keeper', e['actor']))}",
                       "wide": "off target", "blocked": f"blocked by {self.name(e.get('blocker', e['actor']))}"}
             res_zh = {"goal": "进球", "saved": f"被{self.name(e.get('keeper', e['actor']))}扑出",
                       "wide": "偏出", "blocked": f"被{self.name(e.get('blocker', e['actor']))}封堵"}
-            en = (f"{a} ({team}) shoots from {mt['distance_m']} m at {mt['shot_speed_kmh']} km/h, "
+            head = e.get("body_part") == "head"
+            if e.get("woodwork"):
+                res_en["wide"], res_zh["wide"] = "off the woodwork", "击中门框"
+            en = (f"{a} ({team}) {'heads at goal' if head else 'shoots'} from {mt['distance_m']} m at {mt['shot_speed_kmh']} km/h, "
                   f"xG {mt['xg']:.2f}: {res_en[e['outcome']]}")
-            zh = (f"{a}（{team}）在{mt['distance_m']}米处射门，球速{mt['shot_speed_kmh']}公里/小时，"
+            zh = (f"{a}（{team}）在{mt['distance_m']}米处{'头球攻门' if head else '射门'}，球速{mt['shot_speed_kmh']}公里/小时，"
                   f"预期进球{mt['xg']:.2f}：{res_zh[e['outcome']]}")
             if e["outcome"] == "goal":
                 s = e["score_after"]
@@ -115,6 +127,11 @@ class Analyst:
             zh = f"{a}（{team}）{half_zh}{what_zh}，距对方球门{mt['metres_from_goal']}米"
         elif k == "pressure":
             en, zh = f"{a} ({team}) presses {tgt}", f"{a}（{team}）上前逼抢{tgt}"
+        elif k == "foul":
+            en = f"{a} ({team}) fouls {tgt}" if tgt else f"{a} ({team}) commits a foul"
+            zh = f"{a}（{team}）对{tgt}犯规" if tgt else f"{a}（{team}）犯规"
+        elif k == "clearance":
+            en, zh = f"{a} ({team}) clears the ball", f"{a}（{team}）解围"
         elif k == "kickoff":
             en, zh = f"{self.team_name(e['team'])} kick off", f"{self.team_name(e['team'])}开球"
         else:
@@ -133,6 +150,8 @@ class Analyst:
         for i, e in enumerate(events):
             pressed = any(p["kind"] == "pressure" and p["target"] == e["actor"] and abs(p["t"] - e["t"]) < 0.5
                           for p in events[max(0, i - 3):i + 1])
+            if e["kind"] == "pass" and not pressed:  # an opponent within 3 m of the passer counts as pressure
+                pressed = self.nearest_opponent(e["team"], (e["x"], e["y"]), e["t"]) < 3
             e["metrics"] = self.metrics(e, pressed)
             s = state[e["team"]]
             if e["kind"] == "pass":
@@ -148,7 +167,7 @@ class Analyst:
             elif e["kind"] in ("interception", "tackle"):
                 s["regains"] += 1
             # possession: the team of any on-ball action holds the ball (pressure is off-ball)
-            if e["kind"] != "pressure":
+            if e["kind"] not in OFF_BALL:
                 if holder is None:
                     holder, since = e["team"], e["t"]
                 elif e["team"] != holder:
@@ -195,14 +214,14 @@ class Analyst:
         team = events[i]["team"]
         chain = []
         for e in reversed(events[:i + 1]):
-            if e["kind"] == "pressure":
-                if e["team"] != team:
+            if e["kind"] in ("pressure", "foul"):
+                if e["team"] != team and e["kind"] == "pressure":
                     chain.append(e)
                 continue
             if e["team"] != team:
                 break
             chain.append(e)
-            if e["kind"] in ("interception", "tackle", "kickoff", "goal_kick", "keeper_restart"):
+            if e["kind"] in ("interception", "tackle", "kickoff", "goal_kick", "keeper_restart") or e.get("set_piece"):
                 break
         return list(reversed(chain))
 
@@ -220,11 +239,12 @@ class Analyst:
                     cands.append((50, i, "pressure_win"))
                 elif mt["metres_from_goal"] <= 40:
                     cands.append((42, i, "high_regain"))
-            elif k == "pass" and e["outcome"] == "complete" and mt["difficulty"] >= 75:
-                cands.append((30 + (mt["difficulty"] - 75), i, "difficult_pass"))
+            elif k == "pass" and e["outcome"] == "complete" and mt["difficulty"] >= 80 and mt["length_m"] >= 20:
+                cands.append((30 + (mt["difficulty"] - 80), i, "difficult_pass"))
             if k == "pass" and e["outcome"] == "complete":
                 chain = [c for c in self.possession_chain(events, i) if c["kind"] == "pass"]
-                if len(chain) == 6 and all(c["outcome"] == "complete" for c in chain):
+                gain = (chain[-1]["end_x"] - chain[0]["x"]) * (1 if e["team"] == "a" else -1) if chain else 0
+                if len(chain) == 6 and all(c["outcome"] == "complete" for c in chain) and gain > 15:
                     cands.append((38, i, "long_spell"))
             if k in ("interception", "tackle"):
                 recent = [s for s in spells if e["t"] - 20 <= s[2] <= e["t"]]
@@ -327,7 +347,7 @@ class Analyst:
                 if c.get(key) and c[key] not in involved:
                     involved.append(c[key])
         return {
-            "id": f"m-{e['id']}", "t": t_show, "clock": _clock(t_show), "kind": kind,
+            "id": f"m-{e['id']}", "t": t_show, "clock": _clock(t_show + self.t0), "kind": kind,
             "priority": round(score), "team": team, "outcome": e.get("outcome"), "headline": {"en": headline[0], "zh": headline[1]},
             "key_event": e["id"], "event_ids": [c["id"] for c in chain],
             "facts": [c["fact"] for c in chain], "why": why, "players": involved,

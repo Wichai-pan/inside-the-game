@@ -1,44 +1,57 @@
 # Inside the Game: one match, every fan
 
-A synthetic football feed goes through a Microsoft Agent Framework workflow. The workflow interprets the events, picks the moments that matter, explains why, and writes fact-checked commentary and recaps. Every output exists for two viewer types (casual fan, analyst) and two languages (English, Simplified Chinese). The demo site replays the result on an animated pitch, with a broadcast-style lower third, live stats and a timed overlay feed.
+A football match feed goes through Microsoft Agent Framework workflows that interpret the events, pick the moments that matter, explain why, and talk about them the way a broadcast does. Each viewer gets their own version: casual fan or analyst, English or Simplified Chinese, following a team or a single player. The demo replays a match on an animated pitch with two-voice live captions (instant play-by-play plus agent-written analysis), live stats, a player focus mode and an automated recap. A post-match studio page turns full-match statistics into a pundit-style analysis.
 
-All teams, players, events and positions are fictional and come from a seeded simulator. No real match data or footage is used.
+## Data: synthetic matches built from real movement
+
+The challenge asks for synthetic, football-realistic data. Our matches are generated, but the movement in them is real:
+
+1. Real matches from the DFL open data (Bassek et al., *Scientific Data* 2025, [figshare](https://springernature.figshare.com/articles/dataset/An_integrated_dataset_of_spatiotemporal_and_event_data_in_elite_soccer/28196177), CC BY 4.0) are cut into live-ball spells at dead balls. Spells where a side has fewer than 11 players are skipped.
+2. A seeded generator picks spells from several matches, assigns each side to one of two fictional clubs (Harbor City, Ridgeway United), and maps the real players onto fictional players by playing position (Hungarian matching on average positions).
+3. Spells are joined with restarts during which players jog to the next spell's positions. The seed scripts the storyline: how many goals each club scores and roughly when; after a goal, the conceding club restarts from a real kick-off.
+4. Events are converted on the new timeline, so passes, shots and tackles stay consistent with the movement. Every bundle records which source spell each part of the match came from (`provenance`).
+
+The matches never happened and all names are fictional. See [DATA_PLAN.md](DATA_PLAN.md). Real matches are only used locally to develop and test the pipeline (`docs/real/`, not in this repository).
 
 ## Pipeline
 
-| Stage | Where | What it does |
+| Stage | Module | What it does |
 | --- | --- | --- |
-| Ingest | `insidegame/simulate.py` | Seeded 3-minute clip: kick-offs, passes, pressure, tackles, interceptions, shots and restarts, with 22 players and the ball at 5 Hz. Each seed changes the names, the sequence of play and the outcomes. |
-| Interpret | `insidegame/analyst.py` | Causal per-event metrics: pass length, ball speed, progression, receiver space and a 0–100 difficulty rating; shot distance, speed and xG; running possession share, pass completion, shots, xG, pressures and regains. |
-| Explain | `insidegame/analyst.py` | Ranks candidate moments (goals, chances, pressure that forces a turnover, high regains, difficult passes, long passing spells, chaotic spells) and attaches deterministic "why it matters" reasons with the event IDs behind them. |
-| Narrate and check | `insidegame/agents.py` | Agent Framework workflow: `FeedIngestor → Narrator → FactChecker → ClaimAuditor → Producer → RecapWriter`, with rejections looping back to the narrator. The narrator, claim auditor and recap writer are LLM agents. The fact checker (rules) rejects lines that name an uninvolved player, use a number or measurement absent from the facts, or claim an action the feed does not contain. The claim auditor has the model only *extract* who the line says shot, who won the ball, which team leads and in which half; code then compares those claims with the feed. Rejected lines go back with the reasons; after three attempts a template line is used. |
-| Render | `insidegame/build.py`, `docs/` | Exports each match as JSON, with timed `overlays` cues a broadcast renderer could consume, and a static page that replays them. |
-| Personalize | page + agents | Casual and analyst views differ in wording, numbers and layout. The language switch changes the generated commentary as well as the interface. You can follow one team, or pick a player: the player is tagged on the pitch with a 5-second trail, a live card shows touches, passes, average pass difficulty, shots, xG, ball wins, distance and top speed, threshold badges appear for sprints (above 25 km/h for 1.5 s) and every 100 m covered, the moments they took part in are highlighted with their role, and a button jumps to their next involvement. |
+| Generate | `insidegame/remix.py` | Stitches synthetic matches from real spells (above). `insidegame/dfl.py` loads a real DFL window and holds the shared event converter. |
+| Interpret | `insidegame/analyst.py` | Causal per-event metrics: pass length, ball speed, progression, receiver space, a 0–100 difficulty rating; shot distance, speed (from tracking) and official xG; running possession, pass completion, shots, xG, pressures and regains. |
+| Explain | `insidegame/analyst.py` | Ranks moments (goals, chances, pressure that forces a turnover, high regains, difficult passes, progressive passing spells, chaotic spells) and attaches "why it matters" reasons with the event IDs behind them. |
+| Narrate and check | `insidegame/agents.py` | Agent Framework workflow `FeedIngestor → Narrator → FactChecker → ClaimAuditor → Producer → RecapWriter`; rejected lines loop back to the narrator. The fact checker (rules) rejects uninvolved players, numbers or measurements absent from the facts, unsupported football terms and translated names. The claim auditor has a model only *extract* who the line says shot, won the ball, leads, and in which half; code compares that with the feed. After three failed attempts a template line is used. |
+| Play-by-play | `insidegame/playbyplay.py` | One speaker's caption track: templated play-by-play called as soon as each event is known, quiet-spell context lines, and the agents' analysis placed at the time it would really be ready. Urgent calls cut in; analysis that play has overtaken is dropped. |
+| Live timing | `insidegame/live.py` | Builds a match the way a live system would run: each moment and viewer version is a separate workflow run, timed from the moment being known to the line passing both checks. |
+| Statistics | `insidegame/stats.py` | Full-match statistics with [kloppy](https://github.com/PySport/kloppy) (events, oriented per team) and [databallpy](https://github.com/Alek050/databallpy) (25 Hz tracking): distance, high-speed running, sprints, top speed, possession, field tilt, PPDA, pressure on the passer, xT from passes (Karun Singh's open 12×8 grid), 15-minute splits and player tables. |
+| Studio | `insidegame/studio.py` | Agent Framework workflow `StoryPlanner → SectionWriter ⇄ SectionChecker → StudioProducer`: six storylines from the statistics (verdict, turning point, momentum, tactics, fairness of the score, standout players), written in a house pundit style and checked like commentary. |
+| Render | `docs/index.html`, `docs/studio.html` | Static pages that replay the bundles: pitch, captions, transcript, stats, player focus, recap, timed overlay cues, and the studio analysis with its graphics. No model is called while viewing. |
 
-The export records how each line was produced (agent first try, agent after a rewrite, or template), so the fact-check rate can be measured.
+## Measured results (bundled synthetic matches 42, 21, 7)
 
-In the three bundled matches (seeds 5, 78, 87; 108 commentary lines and 12 recaps), 101 lines and 10 recaps were written by the agents and passed both checks; 35 lines needed at least one rewrite. The other 7 lines and 2 recaps fell back to templates. Building took 12–13 minutes per match on an Apple laptop with `qwen3.5:9b`.
+- 108 commentary lines: 102 written by the narrator agent and passed both checks, 33 of them after a rewrite; 6 template fallbacks.
+- Live delay of an analysis line on an Apple laptop with `qwen3.5:9b`: median 8.6–9.7 s per match (6.6–8.6 s when it passes first time). Play-by-play has no model delay. Serving all four viewer versions from one laptop queues them (37–54 s), so live use needs a hosted model.
 
 ## Run
 
-Requires Python 3.10+ and a local [Ollama](https://ollama.com) with a chat model (developed with `qwen3.5:9b`).
+Requires Python 3.10+ and a local [Ollama](https://ollama.com) chat model (developed with `qwen3.5:9b`). Generating synthetic matches needs the DFL files under `data/dfl/<match id>/` (`meta.xml`, `events.xml`, `tracking.xml`) loaded once with databallpy.
 
 ```sh
 uv venv -p 3.12 .venv
 uv pip install -p .venv/bin/python -r requirements.txt
-.venv/bin/python -m insidegame.build --seeds 5 78 87 --model qwen3.5:9b
+.venv/bin/python -m insidegame.live --remix 42 --duration 600
 python3 -m http.server 8000 --directory docs
 ```
 
-Then open http://localhost:8000. The page plays the bundled results and does not call a model while you watch.
+Then open http://localhost:8000.
 
 ## Microsoft technology
 
-- **Microsoft Agent Framework** (`agent-framework-core`): `WorkflowBuilder` graph with typed executors, conditional edges for the check-and-retry loop, shared workflow state, and `Agent` instances for the narrator, claim auditor and recap writer.
-- **Model provider**: currently Ollama through `agent-framework-ollama`. The chat client is passed into `build_workflow`, so an Azure AI Foundry client can replace it without touching the agents.
+- **Microsoft Agent Framework** (`agent-framework-core`): two `WorkflowBuilder` graphs with typed executors, type-checked edges, conditional edges for the check-and-retry loops, shared workflow state, and `Agent` instances for the narrator, claim auditor, recap writer and studio pundit.
+- **Model provider**: Ollama through `agent-framework-ollama` for now. The chat client is passed into each workflow, so a Microsoft Foundry client can replace it without changing the agents.
 
 ## Limitations
 
-- The simulator produces plausible, not physically exact, movement. Player speed is capped at 8.5 m/s; distances covered run about 1.5× real match rates because the clip is unusually dense with turnovers. Events are authoritative for actions and outcomes; positions are never used to label a pass, tackle or shot.
-- The checks cover names, numbers, measurements, a list of unsupported football terms, the shooter, the ball winner, the leading team and the half where the ball was won. Other wrong claims (for example who passed to whom) can still get through.
-- Generation is offline. The page simulates live delivery by releasing moments in time order, using only events up to that moment.
+- Restarts between spells are blended, not real; team shapes can change across a seam. Statistics describe the generated match, not any real one.
+- The checks cover names, numbers, measurements, unsupported terms, the shooter, the ball winner, the leading team and the half where the ball was won. Other wrong claims, such as who passed to whom or which team scored, can still get through, and the 9B model sometimes adds interpretation the data does not support.
+- Generation is offline; the page replays results with their measured live timing.
