@@ -300,9 +300,197 @@ def _home_direction(td, game, period):
     return _DIRECTION[period]
 
 
+def from_match(match):
+    """The same statistics computed from a pipeline match bundle (5 Hz positions + converted events), so
+    stitched synthetic matches get a stats layer too. Team "a" attacks +x, team "b" attacks -x.
+
+    Differences from `build()`: velocities come from 1 s displacements at 5 Hz, restart frames between
+    stitched spells are excluded from possession, and pressure on the passer is replaced by the distance
+    to the nearest opponent when the pass is played.
+    """
+    hz, frames, events = match["hz"], match["frames"], sorted(match["events"], key=lambda e: e["t"])
+    teams = {t["id"]: t for t in match["teams"]}
+    names = {p["id"]: p for p in match["players"]}
+    direction = {"a": 1, "b": -1}
+    grid = xt_grid()
+    pos = np.array([f["players"] for f in frames], float)      # frames x players x 2
+    ball = np.array([f["ball"] for f in frames], float)
+    live = np.array([not f.get("dead") for f in frames])
+    n = len(frames)
+    # segments: six equal blocks of whole minutes
+    block = max(1, int(np.ceil(match["duration"] / 60 / 6)))
+    seg_of = lambda t: min(int(t / 60 // block), 5)
+    seg_labels = [f"{i * block}-{min((i + 1) * block, int(np.ceil(match['duration'] / 60)))}" for i in range(6)]
+
+    # possession per frame from the last on-ball event
+    owner = np.full(n, "", dtype=object)
+    on_ball = [e for e in events if e["kind"] not in ("pressure", "foul", "clearance")]
+    j, cur = 0, ""
+    for k in range(n):
+        while j < len(on_ball) and on_ball[j]["t"] <= k / hz:
+            cur = on_ball[j]["team"]
+            j += 1
+        owner[k] = cur if live[k] else ""
+    seg_idx = np.array([seg_of(k / hz) for k in range(n)])
+
+    def share(mask, attacking_third=False):
+        out = {}
+        for t in teams:
+            m = mask & (owner == t)
+            if attacking_third:
+                m &= ball[:, 0] * direction[t] > 105 / 6
+            out[t] = m.sum()
+        total = sum(out.values()) or 1
+        return {t: round(100 * v / total) for t, v in out.items()}
+
+    # physical
+    # Physical numbers use live play only: restart blends between stitched spells are not real running.
+    step = np.r_[np.zeros((1, pos.shape[1])), np.hypot(*np.moveaxis(np.diff(pos, axis=0), 2, 0))]
+    speed = np.zeros_like(step)
+    speed[hz:] = np.hypot(*np.moveaxis(pos[hz:] - pos[:-hz], 2, 0))  # metres per second over 1 s
+    window_live = np.convolve(live.astype(int), np.ones(hz + 1, int), "full")[:n] == hz + 1
+    step[~live] = 0
+    speed[~window_live] = 0
+    physical = {}
+    for i, p in enumerate(match["players"]):
+        v = speed[:, i]
+        fast = v >= SPRINT
+        edges = np.flatnonzero(np.diff(np.r_[0, fast.astype(int), 0]))
+        runs = (edges[1::2] - edges[::2]) / hz
+        physical[p["id"]] = {"minutes": round(live.sum() / hz / 60), "distance_km": round(step[:, i].sum() / 1000, 2),
+                             "hsr_m": round(step[:, i][v >= HSR].sum()), "sprint_m": round(step[:, i][fast].sum()),
+                             "sprints": int((runs >= 1.0).sum()), "top_speed_kmh": round(float(v.max()) * 3.6, 1)}
+
+    def xt(x, y, team):
+        d = direction[team]
+        return xt_value(grid, (x * d + 52.5) / 105, (y * d + 34) / 68)
+
+    T = {t: defaultdict(float) for t in teams}
+    G = {t: [defaultdict(float) for _ in range(6)] for t in teams}
+    P = defaultdict(lambda: defaultdict(float))
+    space = {t: [] for t in teams}
+    shots_log, goals, score = [], [], {"a": 0, "b": 0}
+    defensive = []
+    index = {p["id"]: i for i, p in enumerate(match["players"])}
+    for e in events:
+        t, pid, k = e["team"], e["actor"], e["kind"]
+        S, Q, Gs = T[t], P[pid], G[t][seg_of(e["t"])]
+        if k == "pass":
+            ok = e["outcome"] == "complete"
+            for d in (S, Q, Gs):
+                d["passes"] += 1
+                d["passes_ok"] += ok
+            if e.get("cross"):
+                S["crosses"] += 1
+                Q["crosses"] += 1
+            f = min(n - 1, round(e["t"] * hz))
+            opp = [index[o["id"]] for o in match["players"] if o["team"] != t]
+            space[t].append(float(np.min(np.hypot(*(pos[f, opp] - pos[f, index[pid]]).T))))
+            if ok:
+                gain = xt(e["end_x"], e["end_y"], t) - xt(e["x"], e["y"], t)
+                for d in (S, Q, Gs):
+                    d["xt"] += gain
+                x0, x1 = e["x"] * direction[t], e["end_x"] * direction[t]
+                if x0 < 105 / 6 <= x1:
+                    for d in (S, Q, Gs):
+                        d["final_third_entries"] += 1
+                if x1 - x0 >= 10 and x1 > 0:
+                    S["progressive_passes"] += 1
+                    Q["progressive_passes"] += 1
+        elif k == "shot":
+            goal, on = e["outcome"] == "goal", e["outcome"] in ("goal", "saved")
+            for d in (S, Q, Gs):
+                d["shots"] += 1
+                d["xg"] += e.get("xg", 0)
+                d["on_target"] += on
+                d["goals"] += goal
+            if e.get("assist"):
+                P[e["assist"]]["key_passes"] += 1
+                P[e["assist"]]["assists"] += goal
+            entry = {"minute": round(e["t"] / 60, 1), "team": teams[t]["name"], "player": names[pid]["name"],
+                     "xg": round(e.get("xg", 0), 3), "outcome": {"goal": "SuccessfulShot", "saved": "SavedShot",
+                                                               "blocked": "BlockedShot"}.get(e["outcome"], "ShotWide"),
+                     "head": e.get("body_part") == "head", "penalty": e.get("penalty", False),
+                     "assist": names[e["assist"]]["name"] if e.get("assist") else None}
+            shots_log.append(entry)
+            if goal:
+                goals.append(entry)
+        elif k in ("tackle", "interception", "foul"):
+            stat = {"tackle": "tackles_won", "interception": "ball_recoveries", "foul": "fouls"}[k]
+            S[stat] += 1
+            Q[stat] += 1
+            defensive.append((t, e["x"] * direction[t]))
+
+    ppda = {}
+    for t in teams:
+        o = "b" if t == "a" else "a"
+        opp_passes = sum(1 for e in events if e["team"] == o and e["kind"] == "pass" and e["x"] * direction[o] < 63 - 52.5)
+        actions = sum(1 for team, x in defensive if team == t and x > 42 - 52.5)
+        ppda[t] = round(opp_passes / actions, 1) if actions else None
+
+    full = live.copy()
+    team_table = []
+    for t, meta in teams.items():
+        S = T[t]
+        squad = [p["id"] for p in match["players"] if p["team"] == t]
+        team_table.append({
+            "team": meta["name"], "call": meta.get("call", meta["name"]), "color": meta.get("color"),
+            "goals": int(S["goals"]), "xg": round(S["xg"], 2), "shots": int(S["shots"]), "on_target": int(S["on_target"]),
+            "possession_pct": share(full)[t], "field_tilt_pct": share(full, True)[t], "passes": int(S["passes"]),
+            "pass_pct": round(100 * S["passes_ok"] / max(S["passes"], 1)), "progressive_passes": int(S["progressive_passes"]),
+            "final_third_entries": int(S["final_third_entries"]), "crosses": int(S["crosses"]),
+            "xt_from_passes": round(S["xt"], 2), "tackles_won": int(S["tackles_won"]),
+            "ball_recoveries": int(S["ball_recoveries"]), "fouls": int(S["fouls"]), "ppda": ppda[t],
+            "opponent_distance_at_pass_m": round(float(np.median(space[t])), 1) if space[t] else None,
+            "distance_km": round(sum(physical[p]["distance_km"] for p in squad), 1),
+            "hsr_km": round(sum(physical[p]["hsr_m"] for p in squad) / 1000, 1),
+            "sprints": sum(physical[p]["sprints"] for p in squad)})
+    segments = []
+    for i in range(6):
+        mask = live & (seg_idx == i)
+        row = {"minutes": seg_labels[i], "seconds": round(mask.sum() / hz)}
+        for t, side in (("a", "home"), ("b", "away")):
+            g = G[t][i]
+            row[side] = {"possession_pct": share(mask)[t], "field_tilt_pct": share(mask, True)[t], "passes": int(g["passes"]),
+                         "pass_pct": round(100 * g["passes_ok"] / max(g["passes"], 1)), "shots": int(g["shots"]),
+                         "xg": round(g["xg"], 2), "xt": round(g["xt"], 2), "final_third_entries": int(g["final_third_entries"]),
+                         "goals": int(g["goals"])}
+        segments.append(row)
+    players = []
+    for p in match["players"]:
+        Q = P.get(p["id"], {})
+        passes = int(Q.get("passes", 0))
+        players.append({"player": p["name"], "team": teams[p["team"]]["name"], "number": p["number"], "position": p["role"],
+                        **physical[p["id"]], "passes": passes,
+                        "pass_pct": round(100 * Q.get("passes_ok", 0) / passes) if passes else None,
+                        "progressive_passes": int(Q.get("progressive_passes", 0)), "xt": round(Q.get("xt", 0), 3),
+                        "shots": int(Q.get("shots", 0)), "xg": round(Q.get("xg", 0), 2), "goals": int(Q.get("goals", 0)),
+                        "key_passes": int(Q.get("key_passes", 0)), "assists": int(Q.get("assists", 0)),
+                        "tackles_won": int(Q.get("tackles_won", 0)), "ball_recoveries": int(Q.get("ball_recoveries", 0))})
+    a, b = match["teams"]
+    return {"match": f"{a['name']} {int(T['a']['goals'])}-{int(T['b']['goals'])} {b['name']}", "source": match["source"],
+            "duration_minutes": round(match["duration"] / 60, 1), "teams": team_table, "segments": segments,
+            "players": players, "goals": goals, "shots": shots_log,
+            "definitions": {"hsr": "distance above 19.8 km/h", "sprints": "runs above 25.2 km/h lasting at least 1 s",
+                            "field_tilt": "share of ball-in-play time with the ball in that team's attacking third",
+                            "ppda": "opponent passes in their own 60% of the pitch per defensive action there",
+                            "xt": "expected threat added by completed passes (open 12x8 grid)",
+                            "opponent_distance_at_pass_m": "median distance from the passer to the nearest opponent"}}
+
+
 def main():
-    stats = build()
-    out = ROOT / "docs" / "real" / "dfl-full-stats.json"
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--match", help="Pipeline match bundle (e.g. docs/synthetic/remix-42.json); omit for the real DFL match")
+    args = parser.parse_args()
+    if args.match:
+        path = Path(args.match)
+        stats = from_match(json.loads(path.read_text()))
+        out = path.with_name(path.stem + "-stats.json")
+    else:
+        stats = build()
+        out = ROOT / "docs" / "real" / "dfl-full-stats.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(stats, ensure_ascii=False, indent=1))
     print(out)

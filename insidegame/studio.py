@@ -60,10 +60,20 @@ def _nth(n):
     return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
 
 
+def _more(H, hv, A, av, what_en, what_zh, lower_is_more=False):
+    """State the comparison outright, so the writer does not have to infer which side is ahead."""
+    if hv == av:
+        return f"{H} and {A} were level on {what_en} ({hv})." , f"{H} 和 {A} 在{what_zh}上持平（{hv}）。"
+    first = (hv < av) if lower_is_more else (hv > av)
+    w, wv, l, lv = (H, hv, A, av) if first else (A, av, H, hv)
+    return f"{w} had more {what_en} than {l} ({wv} vs {lv}).", f"{w} 的{what_zh}多于 {l}（{wv} 比 {lv}）。"
+
+
 def storylines(stats):
     teams = {t["team"]: t for t in stats["teams"]}
     (hn, h), (an, a) = list(teams.items())
-    short = {hn: "Köln" if "Köln" in hn else hn, an: "Bayern" if "Bayern" in an else an}
+    short = {name: t.get("call") or ("Köln" if "Köln" in name else "Bayern" if "Bayern" in name else name)
+             for name, t in teams.items()}
     H, A = short[hn], short[an]
     segs = stats["segments"]
     goals = stats["goals"]
@@ -81,8 +91,14 @@ def storylines(stats):
     if winner:
         en.append(f"{winner} won the match.")
         zh.append(f"{winner} 赢下了比赛。")
+    else:
+        en.append("The match ended level.")
+        zh.append("双方战平。")
     en.append(f"xG: {H} {h['xg']:.2f}, {A} {a['xg']:.2f}. Possession: {H} {h['possession_pct']}%, {A} {a['possession_pct']}%.")
     zh.append(f"预期进球：{H} {h['xg']:.2f}，{A} {a['xg']:.2f}。控球率：{H} {h['possession_pct']}%，{A} {a['possession_pct']}%。")
+    for c in (_more(H, round(h["xg"], 2), A, round(a["xg"], 2), "xG", "预期进球"),
+              _more(H, h["possession_pct"], A, a["possession_pct"], "possession", "控球率")):
+        en.append(c[0]); zh.append(c[1])
     low = [g for g in goals if g["xg"] < 0.1]
     if low:
         en.append(f"{len(low)} of the {len(goals)} goals came from chances under 0.10 xG.")
@@ -105,63 +121,89 @@ def storylines(stats):
         names += [g["player"]] + ([g["assist"]] if g.get("assist") else [])
     if len(goals) >= 2:
         gap = _min(goals[-1]["minute"]) - _min(goals[-2]["minute"])
-        en.append(f"The last goal came {gap} minutes after the previous one and was the winner.")
-        zh.append(f"最后一个进球距上一个进球只有 {gap} 分钟，成为制胜球。")
+        won_it = winner and short[goals[-1]["team"]] == winner and abs(h["goals"] - a["goals"]) == 1
+        en.append(f"The last goal came {gap} minute{'s' if gap != 1 else ''} after the previous one"
+                  + (" and was the winner." if won_it else "."))
+        zh.append(f"最后一个进球距上一个进球只有 {gap} 分钟" + ("，成为制胜球。" if won_it else "。"))
         last = players.get(goals[-1]["player"])
-        if last and last["minutes"] <= 20:
+        longest = max(p["minutes"] for p in stats["players"])
+        if last and last["minutes"] <= 0.25 * longest:  # a substitute who had only just come on
             en.append(f"{last['player']} had been on the pitch for {last['minutes']} minutes.")
             zh.append(f"{last['player']} 当时才上场 {last['minutes']} 分钟。")
     out.append(section("turning_point", "The turning point", "转折点", en, zh, names, {
-        "type": "timeline", "goals": [{"minute": _min(g["minute"]), "team": short[g["team"]], "player": g["player"],
+        "type": "timeline", "length": round(stats.get("duration_minutes", 90)), "goals": [{"minute": _min(g["minute"]), "team": short[g["team"]], "player": g["player"],
                                        "xg": g["xg"], "penalty": g["penalty"]} for g in goals]}))
 
     # 3. Momentum: possession and field tilt by 15 minutes
     first = [s for s in segs[:3]]
     second = [s for s in segs[3:]]
-    best = max(segs, key=lambda s: s["home"]["field_tilt_pct"])
-    worst = min(segs, key=lambda s: s["home"]["possession_pct"])
+    longest_seg = max(s.get("seconds", 1) for s in segs)
+    solid = [s for s in segs if s.get("seconds", 1) >= 0.5 * longest_seg]  # ignore near-empty blocks
+    best = max(solid, key=lambda s: s["home"]["field_tilt_pct"])
+    worst = min(solid, key=lambda s: s["home"]["possession_pct"])
+    h1 = f"{first[0]['minutes'].split('-')[0]}-{first[-1]['minutes'].split('-')[1]}"
+    h2 = f"{second[0]['minutes'].split('-')[0]}-{second[-1]['minutes'].split('-')[1]}"
     en = [f"Between minutes {worst['minutes']}, {A} had {worst['away']['possession_pct']}% possession.",
           f"Between minutes {best['minutes']}, {H} had a field tilt of {best['home']['field_tilt_pct']}%, meaning they had most of the ball in the final third.",
-          f"First-half shots: {H} {sum(s['home']['shots'] for s in first)}, {A} {sum(s['away']['shots'] for s in first)}. "
-          f"Second-half shots: {H} {sum(s['home']['shots'] for s in second)}, {A} {sum(s['away']['shots'] for s in second)}."]
+          f"Shots in minutes {h1}: {H} {sum(s['home']['shots'] for s in first)}, {A} {sum(s['away']['shots'] for s in first)}. "
+          f"Shots in minutes {h2}: {H} {sum(s['home']['shots'] for s in second)}, {A} {sum(s['away']['shots'] for s in second)}."]
     zh = [f"第 {worst['minutes']} 分钟，{A} 控球率 {worst['away']['possession_pct']}%。",
           f"第 {best['minutes']} 分钟，{H} 的场地倾斜度达到 {best['home']['field_tilt_pct']}%，即大部分在前场三分之一的控球属于他们。",
-          f"上半场射门：{H} {sum(s['home']['shots'] for s in first)}，{A} {sum(s['away']['shots'] for s in first)}。"
-          f"下半场射门：{H} {sum(s['home']['shots'] for s in second)}，{A} {sum(s['away']['shots'] for s in second)}。"]
+          f"第 {h1} 分钟射门：{H} {sum(s['home']['shots'] for s in first)}，{A} {sum(s['away']['shots'] for s in first)}。"
+          f"第 {h2} 分钟射门：{H} {sum(s['home']['shots'] for s in second)}，{A} {sum(s['away']['shots'] for s in second)}。"]
     out.append(section("momentum", "Momentum", "比赛走势", en, zh, [], {
         "type": "segments", "metric": "field_tilt_pct",
         "rows": [{"minutes": s["minutes"], "home": s["home"]["field_tilt_pct"], "away": s["away"]["field_tilt_pct"],
                   "home_possession": s["home"]["possession_pct"], "away_possession": s["away"]["possession_pct"]} for s in segs]}))
 
     # 4. Tactics: crosses, pressing, progression
-    en = [f"Crosses: {H} {h['crosses']}, {A} {a['crosses']}.",
-          f"PPDA (opponent passes allowed per defensive action, lower means more pressing): {A} {a['ppda']}, {H} {h['ppda']}.",
+    en = [f"Crosses: {H} {h['crosses']}, {A} {a['crosses']}."]
+    zh = [f"传中：{H} {h['crosses']} 次，{A} {a['crosses']} 次。"]
+    if h["ppda"] is not None and a["ppda"] is not None:
+        en.append(f"PPDA (opponent passes allowed per defensive action, lower means more pressing): {A} {a['ppda']}, {H} {h['ppda']}.")
+        zh.append(f"PPDA（每次防守动作前允许对手传球数，越低代表逼抢越积极）：{A} {a['ppda']}，{H} {h['ppda']}。")
+        c = _more(H, h["ppda"], A, a["ppda"], "pressing (lower PPDA)", "逼抢（PPDA 更低）", lower_is_more=True)
+        en.append(c[0]); zh.append(c[1])
+    for key, w_en, w_zh in (("progressive_passes", "progressive passes", "推进传球"), ("crosses", "crosses", "传中")):
+        c = _more(H, h[key], A, a[key], w_en, w_zh)
+        en.append(c[0]); zh.append(c[1])
+    en += [
           f"Progressive passes: {H} {h['progressive_passes']}, {A} {a['progressive_passes']}. Final-third entries: {H} {h['final_third_entries']}, {A} {a['final_third_entries']}."]
-    zh = [f"传中：{H} {h['crosses']} 次，{A} {a['crosses']} 次。",
-          f"PPDA（每次防守动作前允许对手传球数，越低代表逼抢越积极）：{A} {a['ppda']}，{H} {h['ppda']}。",
-          f"向前推进的传球：{H} {h['progressive_passes']}，{A} {a['progressive_passes']}。进入前场三分之一：{H} {h['final_third_entries']}，{A} {a['final_third_entries']}。"]
+    zh += [f"向前推进的传球：{H} {h['progressive_passes']}，{A} {a['progressive_passes']}。进入前场三分之一：{H} {h['final_third_entries']}，{A} {a['final_third_entries']}。"]
     out.append(section("tactics", "The tactical battle", "战术对决", en, zh, [], {
-        "type": "compare", "rows": [["Crosses", h["crosses"], a["crosses"]], ["PPDA", h["ppda"], a["ppda"]],
-                                    ["Progressive passes", h["progressive_passes"], a["progressive_passes"]],
-                                    ["Final-third entries", h["final_third_entries"], a["final_third_entries"]]]}))
+        "type": "compare", "rows": [r for r in [["Crosses", h["crosses"], a["crosses"]],
+                                                ["PPDA", h["ppda"], a["ppda"]] if h["ppda"] is not None and a["ppda"] is not None else None,
+                                                ["Progressive passes", h["progressive_passes"], a["progressive_passes"]],
+                                                ["Final-third entries", h["final_third_entries"], a["final_third_entries"]]] if r]}))
 
     # 5. Numbers versus the scoreline
     pens = {short[s["team"]]: s["xg"] for s in stats["shots"] if s.get("penalty")}
     np_h, np_a = h["xg"] - pens.get(H, 0), a["xg"] - pens.get(A, 0)
     en = [f"xG: {H} {h['xg']:.2f}, {A} {a['xg']:.2f}. Goals: {H} {h['goals']}, {A} {a['goals']}."]
     zh = [f"预期进球：{H} {h['xg']:.2f}，{A} {a['xg']:.2f}。进球：{H} {h['goals']}，{A} {a['goals']}。"]
+    if not winner:
+        en.append("The match ended level.")
+        zh.append("双方战平。")
+    c = _more(H, round(h["xg"], 2), A, round(a["xg"], 2), "xG", "预期进球")
+    en.append(c[0]); zh.append(c[1])
     if pens:
         en.append(f"Without penalties, xG was {H} {np_h:.2f}, {A} {np_a:.2f}.")
         zh.append(f"去掉点球后，预期进球为 {H} {np_h:.2f}，{A} {np_a:.2f}。")
+        c = _more(H, round(np_h, 2), A, round(np_a, 2), "open-play xG (without penalties)", "非点球预期进球")
+        en.append(c[0]); zh.append(c[1])
+    else:
+        en.append("There were no penalties.")
+        zh.append("本场没有点球。")
     for side, t in ((H, h), (A, a)):
-        en.append(f"{side} scored {t['goals']} from {t['shots']} shots, {t['on_target']} on target.")
+        en.append(f"{side} scored {t['goals']} from {t['shots']} shot{'s' if t['shots'] != 1 else ''}, {t['on_target']} on target.")
         zh.append(f"{side} {t['shots']} 次射门、{t['on_target']} 次射正，打进 {t['goals']} 球。")
     out.append(section("numbers", "Did they deserve it?", "比分公平吗", en, zh, [], {
         "type": "compare", "rows": [["xG", h["xg"], a["xg"]], ["Non-penalty xG", round(np_h, 2), round(np_a, 2)],
                                     ["Goals", h["goals"], a["goals"]], ["Shots on target", h["on_target"], a["on_target"]]]}))
 
     # 6. Standout players
-    regulars = [p for p in stats["players"] if p["minutes"] >= 45]
+    longest = max(p["minutes"] for p in stats["players"])
+    regulars = [p for p in stats["players"] if p["minutes"] >= 0.5 * longest]
     picks = {
         "distance": max(regulars, key=lambda p: p["distance_km"]),
         "sprints": max(regulars, key=lambda p: p["sprints"]),
@@ -169,7 +211,7 @@ def storylines(stats):
         "tackles": max(stats["players"], key=lambda p: p["tackles_won"]),
         "xt": max(regulars, key=lambda p: p["xt"]),
     }
-    sh = lambda p: "Köln" if "Köln" in p["team"] else "Bayern"
+    sh = lambda p: short[p["team"]]
     d, sp, s_, tk, xt = picks["distance"], picks["sprints"], picks["shots"], picks["tackles"], picks["xt"]
     en = [f"{d['player']} ({sh(d)}) covered the most ground: {d['distance_km']} km.",
           f"{sp['player']} ({sh(sp)}) made the most sprints, {sp['sprints']}, with a top speed of {sp['top_speed_kmh']} km/h.",
@@ -326,6 +368,7 @@ async def main_async(args):
     sections = result.get_outputs()[-1]["sections"]
     texts = [t for s in sections for p in s["text"].values() for t in p.values()]
     out = {"match": stats["match"], "source": stats["source"], "style_guide": STYLE_GUIDE, "sections": sections,
+           "teams": [{"name": t["team"], "call": t.get("call") or t["team"], "color": t.get("color")} for t in stats["teams"]],
            "pipeline": {"framework": "Microsoft Agent Framework", "model": f"ollama:{args.model}",
                         "executors": ["story_planner", "section_writer", "section_checker", "studio_producer"],
                         "texts": len(texts), "agent_texts": sum(t["source"].startswith("agent") for t in texts),

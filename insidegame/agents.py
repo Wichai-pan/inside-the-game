@@ -316,7 +316,8 @@ async def audit(agent, text, exp):
     if claimed and claimed not in ("null", "None"):
         tid = _team_of(claimed, exp["teams"])
         if exp["leader"] is None:
-            reasons.append("the score is level, no team leads")
+            if re.search(r"\blead|\bahead|领先", text, re.I):  # "had more xG" is not a claim about the score
+                reasons.append("the score is level, no team leads")
         elif tid and tid != exp["leader"]["id"]:
             reasons.append(f"{exp['leader']['name']} lead, not the other team")
     area = claims.get("area")

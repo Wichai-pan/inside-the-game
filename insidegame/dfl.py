@@ -176,7 +176,7 @@ def convert_events(frames, hz, players, records, id_prefix="dfl-"):
                       "end_x": round(end[0], 2), "end_y": round(end[1], 2), "end_t": round(end_t, 2),
                       "shot_speed_ms": round(max(speeds), 1), "body_part": "head" if shot.get("TypeOfShot") == "head" else "foot",
                       "dfl_pressure": float(shot.get("Pressure", 0)), "counter_attack": shot.get("CounterAttack") == "true",
-                      "woodwork": outcome == "woodwork"}
+                      "woodwork": outcome == "woodwork", "penalty": shot.get("BuildUp") == "penaltyKick"}
             if res is not None and who(res.get("GoalKeeper")):
                 fields["keeper"] = who(res.get("GoalKeeper"))
             if res is not None and res.tag == "BlockedShot" and who(res.get("Player")):

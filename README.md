@@ -24,12 +24,13 @@ The matches never happened and all names are fictional. See [DATA_PLAN.md](DATA_
 | Play-by-play | `insidegame/playbyplay.py` | One speaker's caption track: templated play-by-play called as soon as each event is known, quiet-spell context lines, and the agents' analysis placed at the time it would really be ready. Urgent calls cut in; analysis that play has overtaken is dropped. |
 | Live timing | `insidegame/live.py` | Builds a match the way a live system would run: each moment and viewer version is a separate workflow run, timed from the moment being known to the line passing both checks. |
 | Statistics | `insidegame/stats.py` | Full-match statistics with [kloppy](https://github.com/PySport/kloppy) (events, oriented per team) and [databallpy](https://github.com/Alek050/databallpy) (25 Hz tracking): distance, high-speed running, sprints, top speed, possession, field tilt, PPDA, pressure on the passer, xT from passes (Karun Singh's open 12×8 grid), 15-minute splits and player tables. |
-| Studio | `insidegame/studio.py` | Agent Framework workflow `StoryPlanner → SectionWriter ⇄ SectionChecker → StudioProducer`: six storylines from the statistics (verdict, turning point, momentum, tactics, fairness of the score, standout players), written in a house pundit style and checked like commentary. |
+| Studio | `insidegame/studio.py` | Agent Framework workflow `StoryPlanner → SectionWriter ⇄ SectionChecker → StudioProducer`: six storylines from the statistics (verdict, turning point, momentum, tactics, fairness of the score, standout players), written in a house pundit style and checked like commentary. Comparisons are stated in the facts ("X had more open-play xG than Y") so the writer does not have to infer them. Works on real matches (`stats.build`) and on synthetic bundles (`stats.from_match`, which computes the same table from 5 Hz positions and converted events, excluding restart blends from physical numbers). |
 | Render | `docs/index.html`, `docs/studio.html` | Static pages that replay the bundles: pitch, captions, transcript, stats, player focus, recap, timed overlay cues, and the studio analysis with its graphics. No model is called while viewing. |
 
 ## Measured results (bundled synthetic matches 42, 21, 7)
 
 - 108 commentary lines: 102 written by the narrator agent and passed both checks, 33 of them after a rewrite; 6 template fallbacks.
+- 72 studio texts across the three matches: 64 written by the studio agent, 8 template fallbacks.
 - Live delay of an analysis line on an Apple laptop with `qwen3.5:9b`: median 8.6–9.7 s per match (6.6–8.6 s when it passes first time). Play-by-play has no model delay. Serving all four viewer versions from one laptop queues them (37–54 s), so live use needs a hosted model.
 
 ## Run
@@ -40,6 +41,8 @@ Requires Python 3.10+ and a local [Ollama](https://ollama.com) chat model (devel
 uv venv -p 3.12 .venv
 uv pip install -p .venv/bin/python -r requirements.txt
 .venv/bin/python -m insidegame.live --remix 42 --duration 600
+.venv/bin/python -m insidegame.stats --match docs/synthetic/remix-42.json
+.venv/bin/python -m insidegame.studio --stats docs/synthetic/remix-42-stats.json --out docs/synthetic/remix-42-studio.json
 python3 -m http.server 8000 --directory docs
 ```
 

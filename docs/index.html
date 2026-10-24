@@ -39,7 +39,7 @@ footer{display:flex;justify-content:space-between;gap:14px;color:var(--muted);fo
 <div class="group"><label data-i18n="language">Language</label><div class="seg" id="lang"><button data-v="en" class="active">English</button><button data-v="zh">中文</button></div></div>
 <div class="group"><label for="follow" data-i18n="follow">Follow</label><select id="follow"></select></div>
 <div class="group"><label for="player" data-i18n="playerl">Player focus</label><select id="player"></select></div>
-<a href="./studio.html" style="margin-left:auto;font-size:13px" data-i18n="studio">Post-match studio →</a>
+<a href="./studio.html" id="studio-link" style="margin-left:auto;font-size:13px" data-i18n="studio">Post-match studio →</a>
 </section>
 <div class="grid"><div>
 <section class="card">
@@ -137,7 +137,7 @@ function chrome(){i18n();const L=u();$('#seed').replaceChildren(...seeds.map(s=>
  if(db){const real=!db.synthetic;document.querySelector('[data-i18n=b1]').textContent=real?L.realBadge:(T[lang].b1||T.en.b1);document.querySelector('[data-i18n=foot]').textContent=real?L.realFoot(db.source):(T[lang].foot||T.en.foot)}
  if(db){$('#na').textContent=db.teams[0].name;$('#nb').textContent=db.teams[1].name;$('#ca').style.background=db.teams[0].color;$('#cb').style.background=db.teams[1].color;$('#follow').replaceChildren(...[['',L.all],...db.teams.map(x=>[x.id,x.name])].map(([v,n])=>{const o=document.createElement('option');o.value=v;o.textContent=n;return o}));$('#follow').value=follow;
   const ps=$('#player');ps.replaceChildren(Object.assign(document.createElement('option'),{value:'',textContent:L.nobody}),...db.teams.map(tm=>{const og=document.createElement('optgroup');og.label=tm.name;for(const p of db.players.filter(x=>x.team===tm.id)){const o=document.createElement('option');o.value=p.id;o.textContent=`#${p.number} ${p.name} · ${L.roles[p.role]||p.role}`;og.append(o)}return og}));ps.value=player;$('#pc-feed').dataset.n='';$('#seek').max=db.duration;$('#json').href=seeds.find(x=>x.key===db.key).url;feed();pipeline();$('#ticker').replaceChildren();draw()}}
-async function load(key){playing=false;t=0;player='';track=null;const m=seeds.find(x=>x.key===key)||seeds[0];db=await(await fetch(m.url)).json();db.key=m.key;chrome()}
+async function load(key){playing=false;t=0;player='';track=null;const m=seeds.find(x=>x.key===key)||seeds[0];db=await(await fetch(m.url)).json();db.key=m.key;$('#studio-link').href=`./studio.html?match=${m.key.startsWith('dfl')?'dfl':m.key}`;chrome()}
 function seg(id,fn){for(const b of $(id).children)b.onclick=()=>{$(id).querySelector('.active')?.classList.remove('active');b.classList.add('active');fn(b.dataset.v)}}
 seg('#profile',v=>{profile=v;document.body.className=v;chrome()});seg('#lang',v=>{lang=v;chrome()});seg('#speed',v=>{speed=+v});
 $('#follow').onchange=e=>{follow=e.target.value;feed();draw()};
