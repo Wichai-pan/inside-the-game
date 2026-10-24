@@ -1,0 +1,25 @@
+# Large or licensed local data and third-party checkouts: never published
+data/
+vendor/
+output/
+.venv/
+__pycache__/
+.claude/
+*.mp4
+*.mkv
+
+# Real-data research (DFL, SoccerNet video) stays local: the submission uses synthetic data only
+commentary.py
+classify_roles_pilot.py
+dense_ball_pilot.py
+retrack_camera_pilot.py
+video_pitch_probe.py
+video_to_pitch_pilot.py
+CHELSEA_VIDEO_PROBE.md
+VIDEO_TO_PITCH_PILOT.md
+RESEARCH_BASELINE.md
+FINDINGS.md
+COMMENTARY_DESIGN.md
+HACKATHON_IMPLEMENTATION_PLAN.md
+commentary-preview-v2.jpg
+sites/
