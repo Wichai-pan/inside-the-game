@@ -23,7 +23,8 @@ SEGMENTS = [(1, 0, 15), (1, 15, 30), (1, 30, 99), (2, 45, 60), (2, 60, 75), (2, 
 
 
 def xt_grid():
-    return np.array(json.loads((DATA / "open_xt_12x8_v1.json").read_text()))
+    # Karun Singh's open 12x8 expected-threat grid (https://karun.in/blog/expected-threat.html), shipped with the package
+    return np.array(json.loads((Path(__file__).with_name("resources") / "open_xt_12x8_v1.json").read_text()))
 
 
 def xt_value(grid, x, y):

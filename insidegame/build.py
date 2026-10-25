@@ -29,10 +29,10 @@ def overlays(moments, players):
 
 
 async def run(seed, model, duration):
-    from agent_framework.ollama import OllamaChatClient
+    from .providers import get_client, model_label
 
     match = generate(seed, duration)
-    workflow = build_workflow(OllamaChatClient(model=model), model)
+    workflow = build_workflow(get_client(model), model)
     started = time.time()
     result = await workflow.run(match)
     outputs = result.get_outputs()
@@ -48,7 +48,7 @@ async def run(seed, model, duration):
         "events": analysis["events"], "moments": analysis["moments"], "recap": out["recaps"],
         "final_stats": out["final_stats"], "overlays": overlays(analysis["moments"], match["players"]),
         "pipeline": {
-            "framework": "Microsoft Agent Framework", "model": f"ollama:{model}",
+            "framework": "Microsoft Agent Framework", "model": model_label(model),
             "executors": ["feed_ingestor", "narrator", "fact_checker", "claim_auditor", "producer", "recap_writer"],
             "lines": len(lines), "agent_lines": sources.get("agent", 0),
             "fallback_lines": sources.get("template_fallback", 0), "retried_lines": retried,

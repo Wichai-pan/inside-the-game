@@ -15,6 +15,7 @@ claims with the feed in code. A rejected line goes back to the narrator with the
 the last attempt a template line is used, so every moment always gets commentary, and the export
 records which path produced each line.
 """
+import asyncio
 import json
 import re
 import time
@@ -23,10 +24,12 @@ from dataclasses import dataclass, field
 from agent_framework import Agent, Executor, WorkflowBuilder, WorkflowContext, handler
 
 from .analyst import analyse
+from .evaluate import TRANSLIT
 
 PROFILES = ("casual", "analyst")
 LANGS = ("en", "zh")
 MAX_ATTEMPTS = 3
+CALL_TIMEOUT = 60  # seconds; a model call that hangs becomes a retry or the template line
 
 STYLE = {
     "casual": ("Audience: a casual fan. One sentence, at most 20 words: what happened and why it matters, "
@@ -43,20 +46,32 @@ LANGUAGE = {
 NARRATOR_INSTRUCTIONS = (
     "You are a live football commentator writing one on-screen line for a single match moment. "
     "Use only the facts and reasons you are given. Never invent players, actions, body parts, set pieces, "
-    "match minutes or scores. Use only numbers that appear in the facts or reasons. "
+    "match minutes or scores. Use only numbers that appear in the facts or reasons, each for the thing it measures. "
+    "The key facts say who shot, who scored for which team, who played the last pass and who won the ball: "
+    "if you mention any of these, state them exactly as the key facts do. Only say one player passed to or set up "
+    "another if that pass is listed. A possession figure for the last minute must be called that, never the "
+    "match share. No hype or invented colour: no world-class, stunning, miracle, rare, lethal, collapse, fatigue, "
+    "crowd, titles, home or away. Vary your wording from the recent lines you are shown. "
     'Reply with JSON only: {"line": "<commentary>"}.'
 )
 AUDITOR_INSTRUCTIONS = (
     "You extract claims from one football commentary text (English or Chinese). Do not judge, only extract what "
-    "the text itself says, and use null for anything it does not say. Reply with JSON only: "
-    '{"shooter": surname of the player who took a shot, "ball_winner": surname of the player who won or '
+    "the text itself says. Reply with one line of compact JSON that contains only the keys the text states "
+    "(leave out every key it does not state; {} if none). Possible keys: "
+    '{"shooter": surname of the player who took a shot, "scoring_team": team the text says scored a goal or '
+    'drew level, "passer": surname of the player the text says passed to or set up a team-mate, "receiver": '
+    'surname of the player who received that pass, "ball_winner": surname of the player who won or '
     'intercepted the ball, "ahead_in_score": team the text says is winning the match, '
     '"half": "own" or "opponent" if the text says in which half the ball was won}'
 )
 RECAP_INSTRUCTIONS = (
     "You write short automated match recaps for a studio graphic. Use only the facts provided: final "
     "statistics and the key moments in order. Never invent players, actions, minutes or scores, and use only "
-    'numbers that appear in the facts. Reply with JSON only: {"recap": "<text>"}.'
+    "numbers that appear in the facts, each for the statistic it belongs to. Say who won, or that it was a draw, "
+    "exactly as the result fact does, and copy comparisons (who had more) from the facts rather than working them "
+    "out. There is no half-time in these clips. No hype or invented colour, and never call a team the hosts, "
+    "the visitors, home or away: use their names. "
+    'Reply with JSON only: {"recap": "<text>"}.'
 )
 
 # Terms that describe something the feed never records. A term is allowed only if the facts use it.
@@ -84,6 +99,7 @@ class NarrationJob:
     attempt: int = 1
     rejections: list = field(default_factory=list)
     released: float = field(default_factory=time.perf_counter)
+    recent: list = field(default_factory=list)
 
 
 @dataclass
@@ -175,8 +191,7 @@ def verify(text, lang, allowed_text, allowed_players, roster, word_limit, teams=
     if lang == "zh" and any(t in allowed_text for t in teams) and not any(t in text for t in teams) \
             and re.search(r"队|拜仁|科隆|慕尼黑", text):
         reasons.append("team names must stay in Latin letters")
-    named_in_facts = any(p["name"].split()[-1] in allowed_text for p in roster)
-    if lang == "zh" and ("·" in text or (named_in_facts and not any(p["name"].split()[-1] in text for p in roster))):
+    if lang == "zh" and ("·" in text or re.search(f"[{TRANSLIT}]{{3,}}", text)):  # a name-free line is fine
         reasons.append("player names must stay in Latin letters")
     lowered, allowed_low = text.lower(), allowed_text.lower()
     found = ((lambda term, hay: re.search(rf"\b{re.escape(term)}\b", hay)) if lang == "en"
@@ -195,7 +210,8 @@ def verify(text, lang, allowed_text, allowed_players, roster, word_limit, teams=
 
 def fallback_line(moment, profile, lang):
     key = moment["facts"][-1][lang]
-    why = [w[lang] for w in moment["why"]]
+    score = [k[lang] for k in moment.get("key_facts", []) if k["code"] == "scoring_team"]
+    why = score + [w[lang] for w in moment["why"] if w["code"] not in ("score_level", "score_lead")]
     head = moment["headline"][lang]
     end = "." if lang == "en" else "。"
     parts = [x.rstrip(".。") for x in ([why[0] if why else key] if profile == "casual" else [key] + why[:2])]
@@ -216,8 +232,13 @@ def moment_prompt(job):
     m = job.moment
     facts = "\n".join(f"- {f[job.lang]}" for f in prompt_facts(m, job.profile))
     why = "\n".join(f"- {w[job.lang]}" for w in m["why"])
+    key = "\n".join(f"- {k[job.lang]}" for k in m.get("key_facts", []))
     prompt = (f"{STYLE[job.profile]}\n{LANGUAGE[job.lang]}\n\nMoment: {m['headline']['en']}\n"
-              f"Facts, in order:\n{facts}\nWhy it matters:\n{why}\n")
+              + (f"Key facts:\n{key}\n" if key else "")
+              + f"Facts, in order:\n{facts}\nWhy it matters:\n{why}\n")
+    if job.recent:
+        prompt += "Recent lines for this viewer (do not repeat their openings or phrases):\n" + "\n".join(
+            f"- {r}" for r in job.recent[-3:]) + "\n"
     if job.rejections:
         prompt += ("\nYour previous line was rejected by the fact checker for: "
                    + "; ".join(job.rejections[-1]) + ". Rewrite it using only the facts above.\n")
@@ -233,20 +254,23 @@ SYNONYMS = {
     ("score_lead", "en"): "lead leads", ("score_lead", "zh"): "领先",
     ("score_level", "en"): "level equaliser equalizer equalises equalizes", ("score_level", "zh"): "扳平 战平",
     ("from_regain", "en"): "counter counter-attack counterattack", ("from_regain", "zh"): "反击 快速反击",
+    ("comeback", "en"): "come from behind turned it around", ("comeback", "zh"): "反超 逆转",
+    ("head", "en"): "header headed heads", ("head", "zh"): "头球",
 }
 
 
 def synonyms(facts_and_why, lang):
     words = []
     for item in facts_and_why:
-        for key in ("outcome", "code"):
+        for key in ("outcome", "code", "body"):
             words.append(SYNONYMS.get((item.get(key), lang), ""))
     return " ".join(words)
 
 
 def allowed_for(moment, lang):
-    outcomes = [{"outcome": moment["outcome"]}] if moment["kind"] in ("goal", "shot") else []
-    return " ".join([f[lang] for f in moment["facts"]] + [w[lang] for w in moment["why"]]
+    head = "head" if "heads at goal" in moment["facts"][-1]["en"] else None
+    outcomes = [{"outcome": moment["outcome"], "body": head}] if moment["kind"] in ("goal", "shot") else []
+    return " ".join([f[lang] for f in moment["facts"]] + [w[lang] for w in moment["why"] + moment.get("key_facts", [])]
                     + [moment["headline"][lang], synonyms(outcomes + moment["why"], lang)])
 
 
@@ -273,8 +297,12 @@ def expected_claims(moment, match):
     st = moment["state"]
     score = events[moment["key_event"]].get("score_after") or {"a": st["a"]["goals"], "b": st["b"]["goals"]}
     leader = None if score["a"] == score["b"] else ("a" if score["a"] > score["b"] else "b")
+    passes = [e for e in chain if e["kind"] == "pass" and e["outcome"] == "complete" and e.get("target")]
     return {"shooter": shooter, "winners": winners, "area": area,
-            "leader": teams[leader] if leader else None, "teams": list(teams.values())}
+            "leader": teams[leader] if leader else None, "teams": list(teams.values()),
+            "scoring_team": {events[moment["key_event"]]["team"]} if moment["kind"] == "goal" else set(),
+            "pairs": {(_surname(names[e["actor"]]), _surname(names[e["target"]])) for e in passes},
+            "names": {_surname(n): n for n in names.values()}}
 
 
 def _team_of(text, teams):
@@ -288,15 +316,16 @@ def _team_of(text, teams):
 # Words that signal one of the four audited claim types; a line with none of them skips the model call.
 CLAIM_HINTS = re.compile(
     r"shot|shoot|strike|struck|fire|head|score|goal|save|block|win|won|wins|steal|intercept|turnover|tackl|regain|"
-    r"lead|ahead|level|equali|half|territory|射|门|进球|扑|封堵|断|抢|夺回|领先|落后|扳平|半场|攻门", re.I)
+    r"lead|ahead|level|equali|half|territory|pass|set up|sets up|feed|find|cross|to [A-Z]|"
+    r"射|门|进球|扑|封堵|断|抢|夺回|领先|落后|扳平|半场|攻门|传|助攻", re.I)
 
 
 async def audit(agent, text, exp):
     """Ask the model to extract claims; compare them with the feed in code. Returns rejection reasons."""
     if not CLAIM_HINTS.search(text):
         return []
-    response = await agent.run(text, options={"temperature": 0, "max_tokens": 70, "think": False,
-                                              "response_format": "json"})
+    response = await asyncio.wait_for(agent.run(text, options={"temperature": 0, "max_tokens": 110, "think": False,
+                                                               "response_format": "json"}), CALL_TIMEOUT)
     try:
         raw = json.loads(re.search(r"\{.*\}", response.text, re.S).group(0))
     except (AttributeError, ValueError):
@@ -323,6 +352,19 @@ async def audit(agent, text, exp):
     area = claims.get("area")
     if area in ("own half", "opponent half") and exp.get("area") and area != exp["area"]:
         reasons.append(f"the ball was won in the {exp['area']}, not the {area}")
+    scorer = raw.get("scoring_team")
+    if scorer and str(scorer).lower() not in ("null", "none") and exp.get("scoring_team") is not None:
+        tid = _team_of(str(scorer), exp["teams"])
+        if tid and tid not in exp["scoring_team"]:
+            names = {t["id"]: t["name"] for t in exp["teams"]}
+            reasons.append(f"{names[tid]} did not score here" + (
+                f"; {' and '.join(names[t] for t in sorted(exp['scoring_team']))} scored" if exp["scoring_team"] else ""))
+    passer, receiver = _surname(raw.get("passer")), _surname(raw.get("receiver"))
+    if passer and receiver and exp.get("pairs") is not None and passer != receiver \
+            and passer in exp.get("names", {passer: 1}) and receiver in exp.get("names", {receiver: 1}) \
+            and (passer, receiver) not in exp["pairs"]:
+        full = exp.get("names", {})
+        reasons.append(f"{full.get(passer, passer.title())} did not pass to {full.get(receiver, receiver.title())} in this move")
     return reasons
 
 
@@ -345,7 +387,8 @@ class FeedIngestor(Executor):
         ctx.set_state("analysis", analysis)
         variants = only.get("variants") or [(p, l) for p in PROFILES for l in LANGS]
         chosen = [m for m in analysis["moments"] if only.get("moments") is None or m["id"] in only["moments"]]
-        jobs = [NarrationJob(m, p, l) for m in chosen for p, l in variants]
+        recent = only.get("recent", {})
+        jobs = [NarrationJob(m, p, l, recent=list(recent.get(f"{p}/{l}", []))) for m in chosen for p, l in variants]
         ctx.set_state("expected", len(jobs))
         ctx.set_state("approved", [])
         for job in jobs:
@@ -363,8 +406,8 @@ class Narrator(Executor):
     @handler
     async def narrate(self, job: NarrationJob, ctx: WorkflowContext[Candidate]) -> None:
         try:
-            response = await self.agent.run(moment_prompt(job), options={
-                "temperature": 0.5, "max_tokens": 110, "think": False, "response_format": "json"})
+            response = await asyncio.wait_for(self.agent.run(moment_prompt(job), options={
+                "temperature": 0.5, "max_tokens": 110, "think": False, "response_format": "json"}), CALL_TIMEOUT)
             text = _json_field(response.text, "line")
         except Exception as exc:  # model unavailable: let the checker route to the fallback
             text = ""
@@ -383,16 +426,36 @@ class FactChecker(Executor):
     @handler
     async def check(self, cand: Candidate, ctx: WorkflowContext[NarrationJob | Audit | Approved]) -> None:
         job, match = cand.job, ctx.get_state("match")
-        limit = (26 if job.profile == "casual" else 36) if job.lang == "en" else (60 if job.profile == "casual" else 85)
+        limit = (26 if job.profile == "casual" else 36) if job.lang == "en" else (70 if job.profile == "casual" else 95)
         teams = [n for t in match["teams"] for n in (t["name"], t.get("call", t["name"]), t["short"])]
         reasons = verify(cand.text, job.lang, allowed_for(job.moment, job.lang),
                          set(job.moment["players"]), match["players"], limit, teams)
+        if not reasons and cand.text:
+            reasons = claim_rules(cand.text, job.lang, match, job.moment)
         if not reasons:
             await ctx.send_message(Audit(job, cand.text))
             return
         if cand.text:
             job.rejections.append(reasons)
         await retry_or_fallback(job, ctx)
+
+
+def recap_rules(text, lang, match, analysis):
+    from .evaluate import Names, check_text, reasons, recap_context
+
+    names = Names(match["players"], match["teams"])
+    bundle = {"events": analysis["events"], "moments": analysis["moments"], "teams": match["teams"],
+              "players": match["players"], "final_stats": final_stats(match, analysis)}
+    return reasons(check_text(text, lang, recap_context(bundle, names), names))
+
+
+def claim_rules(text, lang, match, moment):
+    """Pattern checks for who scored, passed, shot and led, invented events and colour, and possession windows."""
+    from .evaluate import Names, check_text, moment_context, reasons
+
+    names = Names(match["players"], match["teams"])
+    bundle = {"events": match["_events"], "teams": match["teams"], "players": match["players"]}
+    return reasons(check_text(text, lang, moment_context(bundle, moment, names), names))
 
 
 async def retry_or_fallback(job, ctx):
@@ -458,10 +521,11 @@ class Producer(Executor):
                           "teams": match["teams"]}
         for p in PROFILES:
             for l in LANGS:
-                facts = [stats[l]] + [f"{m['clock']} {m['headline'][l]}: {m['facts'][-1][l]}"
-                                      for m in analysis["moments"]]
+                facts = [stats[l]] + result_facts(match, stats, l) + [
+                    f"{m['clock']} {m['headline'][l]}: {m['facts'][-1][l]}" for m in analysis["moments"]]
                 allowed = " ".join(facts + [w[l] for m in analysis["moments"] for w in m["why"]]
-                                   + [synonyms([{"outcome": m.get("outcome")}] + m["why"], l)
+                                   + [synonyms([{"outcome": m.get("outcome"), "body": "head" if "heads at goal" in m["facts"][-1]["en"] else None}]
+                                               + m["why"], l)
                                       for m in analysis["moments"]])
                 await ctx.send_message(RecapJob(p, l, facts, allowed, players, recap_expected))
 
@@ -486,13 +550,15 @@ class RecapWriter(Executor):
         result, rejections = None, []
         for _ in range(MAX_ATTEMPTS):
             try:
-                response = await self.agent.run(prompt, options={
-                    "temperature": 0.4, "max_tokens": 400, "think": False, "response_format": "json"})
+                response = await asyncio.wait_for(self.agent.run(prompt, options={
+                    "temperature": 0.4, "max_tokens": 400, "think": False, "response_format": "json"}), 3 * CALL_TIMEOUT)
                 text = _json_field(response.text, "recap")
             except Exception as exc:
                 rejections.append([f"model error: {exc}"])
                 break
             reasons = verify(text, job.lang, job.allowed, set(job.players), match["players"], limit)
+            if not reasons and text:
+                reasons = recap_rules(text, job.lang, match, ctx.get_state("analysis"))
             if not reasons:
                 try:
                     reasons = await audit(self.auditor, text, job.expected)
@@ -504,10 +570,11 @@ class RecapWriter(Executor):
             rejections.append(reasons)
             prompt += "\nYour previous recap was rejected for: " + "; ".join(reasons) + ". Rewrite it.\n"
         if result is None:
-            heads = [f.split(": ", 1)[0] for f in job.facts[1:4]]
+            heads = [f.split(": ", 1)[0] for f in job.facts if re.match(r"\d+:\d\d ", f)][:3]
             joiner = ", " if job.lang == "en" else "，"
             tail = (" Key moments: " if job.lang == "en" else "关键时刻：") + joiner.join(heads)
-            result = {"text": job.facts[0] + tail, "source": "template_fallback"}
+            result = {"text": job.facts[0] + (" " if job.lang == "en" else "") + job.facts[1] + tail,
+                      "source": "template_fallback"}
         result["rejections"] = rejections
         recaps = ctx.get_state("recaps")
         recaps[job.profile][job.lang] = result
@@ -515,6 +582,25 @@ class RecapWriter(Executor):
         if sum(len(v) for v in recaps.values()) == len(PROFILES) * len(LANGS):
             await ctx.yield_output({"analysis": ctx.get_state("analysis"), "recaps": recaps,
                                     "final_stats": final_stats(match, ctx.get_state("analysis"))})
+
+
+def result_facts(match, stats, lang):
+    """The result and the main comparisons, stated outright (the model misreads "1-6" otherwise)."""
+    a, b = stats["a"], stats["b"]
+    na, nb = match["teams"][0]["name"], match["teams"][1]["name"]
+    if a["goals"] == b["goals"]:
+        out = [("The match was a draw: neither team won.", "比赛战平，双方都没有赢。")]
+    else:
+        w, l = (na, nb) if a["goals"] > b["goals"] else (nb, na)
+        out = [(f"{w} won the match; {l} lost.", f"{w} 赢下了比赛，{l} 输了。")]
+    for key, en, zh in (("xg", "xG", "预期进球"), ("shots", "shots", "射门"), ("possession_pct", "possession", "控球率")):
+        x, y = round(a[key], 2), round(b[key], 2)
+        if x == y:
+            out.append((f"{na} and {nb} were level on {en} ({x}).", f"{na} 和 {nb} 的{zh}相同（{x}）。"))
+        else:
+            hi, hv, lo, lv = (na, x, nb, y) if x > y else (nb, y, na, x)
+            out.append((f"{hi} had more {en} than {lo} ({hv} vs {lv}).", f"{hi} 的{zh}多于 {lo}（{hv} 比 {lv}）。"))
+    return [en if lang == "en" else zh for en, zh in out]
 
 
 def final_stats(match, analysis):

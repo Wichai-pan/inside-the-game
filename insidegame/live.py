@@ -25,6 +25,21 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs" / "real"
 
 
+def throughput(model):
+    """Decode speed of the local model right now (tokens/s), stored with the latency so a slow run on a busy
+    machine can be told apart from a slow pipeline."""
+    import urllib.request
+
+    body = json.dumps({"model": model, "prompt": "Describe a football pitch in one sentence.", "stream": False,
+                       "think": False, "options": {"num_predict": 40, "temperature": 0}}).encode()
+    try:
+        with urllib.request.urlopen(urllib.request.Request("http://localhost:11434/api/generate", body), timeout=120) as r:
+            d = json.loads(r.read())
+        return round(d["eval_count"] / (d["eval_duration"] / 1e9), 1)
+    except (OSError, ValueError, KeyError, ZeroDivisionError):
+        return None
+
+
 async def run_once(client, model, match, only):
     workflow = build_workflow(client, model)
     started = time.perf_counter()
@@ -33,9 +48,9 @@ async def run_once(client, model, match, only):
 
 
 async def main_async(args):
-    from agent_framework.ollama import OllamaChatClient
+    from .providers import get_client, model_label
 
-    client = OllamaChatClient(model=args.model)
+    client = get_client(args.model)
     if args.remix is not None:
         from .remix import generate
         match = generate(args.remix, args.duration)
@@ -47,18 +62,31 @@ async def main_async(args):
         out_dir, name, label = OUT, f"dfl-{args.start}-{args.end}", "Köln–Bayern (real data)"
     moments = analyse(match)["moments"]
     print(f"{len(match['events'])} events, {len(moments)} moments")
+    if args.recap_only:  # keep the measured lines, regenerate only the recaps
+        path = out_dir / f"{name}.json"
+        bundle = json.loads(path.read_text())
+        out, _ = await run_once(client, args.model, match, {"moments": [moments[-1]["id"]],
+                                                           "variants": [["casual", "en"]], "recap": True})
+        bundle["recap"] = out["recaps"]
+        path.write_text(json.dumps(bundle, ensure_ascii=False, separators=(",", ":")))
+        print(json.dumps({p: {l: r["source"] for l, r in v.items()} for p, v in out["recaps"].items()}))
+        return
 
     # Warm the model so the first measurement is not a cold load.
     await run_once(client, args.model, match, {"moments": [moments[0]["id"]], "variants": [["casual", "en"]],
                                                "recap": False})
+    speed_before = throughput(args.model)
     lines = {m["id"]: {p: {} for p in PROFILES} for m in moments}
+    recent = {f"{p}/{l}": [] for p in PROFILES for l in LANGS}  # each viewer's earlier lines, for variety
     for m in moments:
         for p in PROFILES:
             for l in LANGS:
                 out, wall = await run_once(client, args.model, match,
-                                           {"moments": [m["id"]], "variants": [[p, l]], "recap": False})
+                                           {"moments": [m["id"]], "variants": [[p, l]], "recap": False,
+                                            "recent": {f"{p}/{l}": recent[f"{p}/{l}"][-3:]}})
                 line = next(x for x in out["analysis"]["moments"] if x["id"] == m["id"])["commentary"][p][l]
                 lines[m["id"]][p][l] = line
+                recent[f"{p}/{l}"].append(line["text"])
                 print(f"{m['clock']} {p}/{l}: {line['seconds']:.1f}s attempts={line['attempts']} {line['source']}")
 
     # Queueing: all four variants of one moment requested at once (one machine serving every viewer).
@@ -81,7 +109,8 @@ async def main_async(args):
                              "max": round(max(seconds), 1)},
         "first_try_median": round(statistics.median(first_try), 1) if first_try else None,
         "four_variants_at_once": sorted(round(x, 1) for x in together),
-        "model": f"ollama:{args.model}", "note": "From the moment being known to the line passing both checks.",
+        "model": model_label(args.model), "note": "From the moment being known to the line passing both checks.",
+        "model_tokens_per_second": [speed_before, throughput(args.model)],
     }
     captions = {p: {l: schedule(match, analysis["events"], analysis["moments"], p, l) for l in LANGS}
                 for p in PROFILES}
@@ -93,7 +122,7 @@ async def main_async(args):
         "events": analysis["events"], "moments": analysis["moments"], "recap": out["recaps"],
         "final_stats": out["final_stats"], "overlays": overlays(analysis["moments"], match["players"]),
         "captions": captions, "latency": latency,
-        "pipeline": {"framework": "Microsoft Agent Framework", "model": f"ollama:{args.model}",
+        "pipeline": {"framework": "Microsoft Agent Framework", "model": model_label(args.model),
                      "executors": ["feed_ingestor", "narrator", "fact_checker", "claim_auditor", "producer",
                                    "recap_writer"],
                      "lines": len(sources), "agent_lines": sources.count("agent"),
@@ -121,6 +150,7 @@ def main():
     parser.add_argument("--model", default="qwen3.5:9b")
     parser.add_argument("--remix", type=int, default=None, help="Seed of a stitched synthetic match")
     parser.add_argument("--duration", type=int, default=600)
+    parser.add_argument("--recap-only", action="store_true", help="Regenerate only the recaps of an existing bundle")
     asyncio.run(main_async(parser.parse_args()))
 
 

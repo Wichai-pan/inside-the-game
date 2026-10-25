@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inside the Game · How It Works</title>
+<meta name="description" content="How Inside the Game turns a football feed into fact-checked, personalised live commentary with Microsoft Agent Framework workflows.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./assets/theme.css">
+<style>
+.hero{padding:40px 0 28px;max-width:860px}
+.hero h1{font:800 clamp(38px,5vw,64px)/.95 var(--display);text-transform:uppercase;margin:12px 0 16px}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p{color:var(--muted);font-size:17px;max-width:720px}
+.hero .cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+section.block{margin-top:var(--s6)}
+.block>h2{font:800 26px/1.1 var(--display);text-transform:uppercase;letter-spacing:.02em;margin-bottom:6px}
+.block>p.sub{color:var(--muted);margin-bottom:18px;max-width:760px}
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s4)}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px 22px}
+.tile .k{font:800 13px/1 var(--display);letter-spacing:.08em;color:var(--accent)}
+.tile h3{font:700 17px/1.3 var(--ui);margin:10px 0 6px}
+.tile p{color:var(--muted);font-size:14px;line-height:1.6}
+.flow{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;counter-reset:s}
+.step{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 14px}
+.step.llm{border-color:rgba(143,184,255,.35);background:linear-gradient(160deg,rgba(143,184,255,.08),var(--surface) 60%)}
+.step small{display:block;font:700 10.5px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.step.llm small{color:var(--voice-an)}
+.step b{display:block;font-size:14.5px;margin:8px 0 6px}
+.step p{font-size:12.5px;color:var(--muted);line-height:1.5}
+.loop{margin-top:10px;font-size:12.5px;color:var(--dim)}
+.loop b{color:var(--warn);font-weight:600}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s4)}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px 20px}
+.fact b{display:block;font:800 40px/1 var(--display)}
+.fact span{display:block;color:var(--muted);font-size:13px;margin-top:8px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:var(--s4)}
+ul.clean{margin:0;padding-left:18px;color:var(--muted);font-size:14px;line-height:1.7}
+ul.clean b{color:var(--text);font-weight:600}
+@media(max-width:1000px){.flow{grid-template-columns:repeat(3,minmax(0,1fr))}.facts{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.cols,.two{grid-template-columns:1fr}.flow{grid-template-columns:1fr 1fr}.hero p{font-size:15.5px}}
+</style></head>
+<body>
+<header class="nav"><div class="wrap">
+  <a class="brand" href="./index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="#4ef09c"/><path d="M8 22V10M8 10h7M24 10v12M17 10h7M16 22h8" stroke="#04140b" stroke-width="3" stroke-linecap="round" fill="none"/></svg><span>Inside the Game</span></a>
+  <nav><a href="./index.html">Match centre</a><a href="./studio.html">Studio</a><a href="./about.html" aria-current="page">How it works</a></nav>
+  <div class="right"><a class="btn" href="https://github.com/Wichai-pan/inside-the-game">GitHub ↗</a></div>
+</div></header>
+
+<main class="wrap">
+<section class="hero">
+  <div class="eyebrow">How it works</div>
+  <h1>A broadcast team of agents, <em>checked against the data.</em></h1>
+  <p>Inside the Game reads a football match feed the way a broadcast crew does: it measures what happened, decides which moments are worth talking about, explains why, and says it in the voice each viewer wants. Nothing reaches the screen until it has been checked against the feed.</p>
+  <div class="cta"><a class="btn primary" href="./index.html">Watch a match ▶</a><a class="btn" href="./studio.html">Open the post-match studio</a></div>
+</section>
+
+<section class="block">
+  <h2>One match, four broadcasts</h2>
+  <p class="sub">The same events produce a different commentary for each viewer. Switch between them live in the match centre.</p>
+  <div class="cols">
+    <div class="tile"><div class="k">CASUAL FAN</div><h3>Plain words, the story first</h3><p>Who has the upper hand, why a moment mattered, few numbers. Big captions and a simple possession bar.</p></div>
+    <div class="tile"><div class="k">ANALYST</div><h3>Metrics, reasons and evidence</h3><p>Pass difficulty, ball and shot speed, xG, field position, the event IDs behind every claim, and live team stats.</p></div>
+    <div class="tile"><div class="k">ENGLISH · 中文 · YOUR PLAYER</div><h3>Your language, your focus</h3><p>Each line is written natively in English or Simplified Chinese. Follow a club or a single player to see their touches, sprints and involvement.</p></div>
+  </div>
+</section>
+
+<section class="block">
+  <h2>The live workflow</h2>
+  <p class="sub">A Microsoft Agent Framework workflow with typed executors. Blue steps call a language model; the rest are deterministic code.</p>
+  <div class="flow">
+    <div class="step"><small>Code</small><b>Feed ingestor</b><p>Events arrive in time order with tracking positions.</p></div>
+    <div class="step"><small>Code</small><b>Analyst</b><p>Pass difficulty, speeds, xG, possession; ranks the moments that matter and why.</p></div>
+    <div class="step llm"><small>Agent</small><b>Narrator</b><p>Writes one line per viewer type and language from the facts only.</p></div>
+    <div class="step"><small>Code</small><b>Fact checker</b><p>Rejects names, numbers or actions that are not in the data.</p></div>
+    <div class="step llm"><small>Agent</small><b>Claim auditor</b><p>Extracts who shot, who won the ball, who leads and where; code compares with the feed.</p></div>
+    <div class="step"><small>Code</small><b>Producer</b><p>Times the line into the broadcast next to instant play-by-play.</p></div>
+  </div>
+  <p class="loop"><b>↺ Retry loop:</b> a rejected line goes back to the narrator with the reason. After three failures a template line is used, and the page says so.</p>
+</section>
+
+<section class="block">
+  <h2>By the numbers</h2>
+  <p class="sub">From the bundled post-match studio runs, loaded from the same files the pages use.</p>
+  <div class="facts" id="facts">
+    <div class="fact"><b id="f-matches">–</b><span>synthetic matches</span></div>
+    <div class="fact"><b id="f-texts">–</b><span>studio texts written by the agent</span></div>
+    <div class="fact"><b id="f-retried">–</b><span>rewritten after a check rejected them</span></div>
+    <div class="fact"><b>0</b><span>model calls while you watch: the pages replay recorded runs</span></div>
+  </div>
+  <p class="loop" id="f-model"></p>
+</section>
+
+<section class="block two">
+  <div class="tile"><div class="k">THE DATA</div><h3>Synthetic matches, real movement</h3>
+    <ul class="clean">
+      <li>Live-ball spells are cut from the <b>DFL open data</b> (Bassek et al. 2025, CC BY 4.0).</li>
+      <li>A seeded generator stitches spells from several matches into a new match between two <b>fictional clubs</b>, Harbor City and Ridgeway United.</li>
+      <li>Real players are mapped to fictional players by position; every bundle records which source spell each part came from.</li>
+    </ul></div>
+  <div class="tile"><div class="k">LIMITS WE SHOW, NOT HIDE</div><h3>Honest about what is checked</h3>
+    <ul class="clean">
+      <li>Every commentary line says whether an agent wrote it, how many attempts it took, or whether a template replaced it.</li>
+      <li>The analyst view shows the measured delay of each line and which ones were dropped because play had moved on.</li>
+      <li>Checks cover names, numbers, measurements, the shooter, the ball winner, the leader and the half; other errors can still get through.</li>
+    </ul></div>
+</section>
+</main>
+
+<footer class="site"><div class="wrap"><span>Teams and players are fictional. Movement comes from the DFL open data (CC BY 4.0).</span><span><a href="https://github.com/Wichai-pan/inside-the-game">Source code</a></span></div></footer>
+<script>
+(async()=>{try{const si=await(await fetch('./synthetic/index.json')).json(),ms=si.matches||[];document.getElementById('f-matches').textContent=ms.length;
+ const all=await Promise.all(ms.map(m=>fetch(`./synthetic/${m.id}-studio.json`).then(r=>r.json()).catch(()=>null)));const ps=all.filter(Boolean).map(s=>s.pipeline);if(!ps.length)return;
+ const sum=k=>ps.reduce((a,p)=>a+(p[k]||0),0);document.getElementById('f-texts').textContent=`${sum('agent_texts')}/${sum('texts')}`;document.getElementById('f-retried').textContent=sum('retried');
+ document.getElementById('f-model').textContent=`Model ${ps[0].model}, run through ${ps[0].framework}.`}catch(e){console.error(e)}})();
+</script>
+</body></html>

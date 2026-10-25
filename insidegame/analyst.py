@@ -110,10 +110,14 @@ class Analyst:
             head = e.get("body_part") == "head"
             if e.get("woodwork"):
                 res_en["wide"], res_zh["wide"] = "off the woodwork", "击中门框"
-            en = (f"{a} ({team}) {'heads at goal' if head else 'shoots'} from {mt['distance_m']} m at {mt['shot_speed_kmh']} km/h, "
-                  f"xG {mt['xg']:.2f}: {res_en[e['outcome']]}")
-            zh = (f"{a}（{team}）在{mt['distance_m']}米处{'头球攻门' if head else '射门'}，球速{mt['shot_speed_kmh']}公里/小时，"
-                  f"预期进球{mt['xg']:.2f}：{res_zh[e['outcome']]}")
+            if e.get("penalty"):
+                en = f"{a} ({team}) takes a penalty at {mt['shot_speed_kmh']} km/h, xG {mt['xg']:.2f}: {res_en[e['outcome']]}"
+                zh = f"{a}（{team}）主罚点球，球速{mt['shot_speed_kmh']}公里/小时，预期进球{mt['xg']:.2f}：{res_zh[e['outcome']]}"
+            else:
+                en = (f"{a} ({team}) {'heads at goal' if head else 'shoots'} from {mt['distance_m']} m at {mt['shot_speed_kmh']} km/h, "
+                      f"xG {mt['xg']:.2f}: {res_en[e['outcome']]}")
+                zh = (f"{a}（{team}）在{mt['distance_m']}米处{'头球攻门' if head else '射门'}，球速{mt['shot_speed_kmh']}公里/小时，"
+                      f"预期进球{mt['xg']:.2f}：{res_zh[e['outcome']]}")
             if e["outcome"] == "goal":
                 s = e["score_after"]
                 en += f". Score: {self.team_name('a')} {s['a']}-{s['b']} {self.team_name('b')}"
@@ -253,6 +257,9 @@ class Analyst:
         chosen = []
         for score, i, kind in sorted(cands, key=lambda c: -c[0]):
             t = events[i].get("end_t", events[i]["t"])
+            if kind in ("difficult_pass", "long_spell", "chaos", "high_regain", "pressure_win") \
+                    and sum(c["kind"] == kind for c in chosen) >= 2:
+                continue  # at most two of each routine kind, so the commentary does not repeat itself
             if all(abs(t - c["t"]) >= 10 for c in chosen) and len(chosen) < 9:
                 chosen.append(self.moment(events, i, kind, spells, score))
         return sorted(chosen, key=lambda m: m["t"])
@@ -285,8 +292,13 @@ class Analyst:
                 why.append({"code": "big_chance", "en": f"A {xg:.2f} xG chance: about {round(xg * 100)} goals per 100 such shots.",
                             "zh": f"预期进球{xg:.2f}，同类机会每100次约有{round(xg * 100)}次进球。"})
             else:
-                why.append({"code": "half_chance", "en": f"Only a {xg:.2f} xG chance: a speculative attempt.",
-                            "zh": f"预期进球只有{xg:.2f}，属于机会不大的尝试。"})
+                n = max(1, round(xg * 100))
+                variants = [(f"Only a {xg:.2f} xG chance: about {n} in 100 such shots go in.",
+                             f"预期进球只有{xg:.2f}，这类射门每100次约进{n}个。"),
+                            (f"A {xg:.2f} xG effort, a low-percentage try.", f"预期进球{xg:.2f}，成功率很低的尝试。"),
+                            (f"Chance quality just {xg:.2f} xG: the odds were against it.", f"机会质量只有{xg:.2f}预期进球，进球希望不大。")]
+                en_w, zh_w = variants[sum(map(ord, e["id"])) % len(variants)]
+                why.append({"code": "half_chance", "en": en_w, "zh": zh_w})
             start = chain[0]
             if start["kind"] in ("interception", "tackle"):
                 gap = round(e["t"] - start["t"])
@@ -300,11 +312,16 @@ class Analyst:
                 s = e["score_after"]
                 lead = "level" if s["a"] == s["b"] else ("a" if s["a"] > s["b"] else "b")
                 if lead == "level":
-                    why.append({"code": "score_level", "en": f"The match is level at {s['a']}-{s['b']}.",
-                                "zh": f"比分扳平为{s['a']}-{s['b']}。"})
+                    why.append({"code": "score_level", "en": f"{tn} equalise: the match is level at {s['a']}-{s['b']}.",
+                                "zh": f"{tn}扳平比分，现在是{s['a']}-{s['b']}。"})
                 else:
                     why.append({"code": "score_lead", "en": f"{self.team_name(lead)} lead {max(s.values())}-{min(s.values())}.",
                                 "zh": f"{self.team_name(lead)}以{max(s.values())}-{min(s.values())}领先。"})
+                    trailed = any(g["kind"] == "shot" and g["outcome"] == "goal"
+                                  and g["score_after"][team] < g["score_after"][other] for g in events[:i])
+                    if lead == team and trailed:
+                        why.append({"code": "comeback", "en": f"{tn} have come from behind to lead.",
+                                    "zh": f"{tn}完成反超。"})
         elif kind == "pressure_win":
             presser = next(p for p in chain if p["kind"] == "pressure")
             why.append({"code": "pressure_paid_off", "en": f"Pressure from {self.name(presser['actor'])} forced the turnover almost at once.",
@@ -333,8 +350,11 @@ class Analyst:
         recent = st[team]["recent_possession_pct"]
         if e["t"] >= 30 and (recent >= 60 or recent <= 40):
             leader = team if recent >= 60 else other
-            why.append({"code": "recent_possession", "en": f"{self.team_name(leader)} have had {max(recent, 100 - recent)}% of the ball in the last minute.",
-                        "zh": f"最近一分钟{self.team_name(leader)}的控球率为{max(recent, 100 - recent)}%。"})
+            whole = st[leader]["possession_pct"]
+            why.append({"code": "recent_possession",
+                        "en": f"In the last minute {self.team_name(leader)} have had {max(recent, 100 - recent)}% of the ball "
+                              f"(their match share so far: {whole}%).",
+                        "zh": f"最近一分钟{self.team_name(leader)}的控球率为{max(recent, 100 - recent)}%（全场至今为{whole}%）。"})
         headline = {
             "goal": ("Goal", "进球"), "shot": ("Chance", "射门机会"),
             "pressure_win": ("Pressure pays off", "逼抢奏效"), "high_regain": ("High regain", "前场夺回球权"),
@@ -347,12 +367,47 @@ class Analyst:
                 if c.get(key) and c[key] not in involved:
                     involved.append(c[key])
         return {
+            "key_facts": self.key_facts(kind, e, chain),
             "id": f"m-{e['id']}", "t": t_show, "clock": _clock(t_show + self.t0), "kind": kind,
             "priority": round(score), "team": team, "outcome": e.get("outcome"), "headline": {"en": headline[0], "zh": headline[1]},
             "key_event": e["id"], "event_ids": [c["id"] for c in chain],
             "facts": [c["fact"] for c in chain], "why": why, "players": involved,
             "metrics": mt, "state": st,
         }
+
+
+    def key_facts(self, kind, e, chain):
+        """Who did what, stated outright, so the narrator does not have to infer it from the chain."""
+        out = []
+        a, tn = self.name(e["actor"]), self.team_name(e["team"])
+        on = self.team_name(_other(e["team"]))
+        if kind in ("goal", "shot"):
+            out.append({"code": "shooter", "en": f"Shooter: {a} ({tn}).", "zh": f"射门球员：{a}（{tn}）。"})
+            i = next(k for k, c in enumerate(chain) if c["id"] == e["id"])
+            prev = next((c for c in reversed(chain[:i]) if c["kind"] not in ("pressure", "foul")), None)
+            if prev and prev["kind"] == "pass" and prev["outcome"] == "complete" and prev.get("target") == e["actor"]:
+                p = self.name(prev["actor"])
+                out.append({"code": "key_pass", "en": f"Last pass before the shot: {p} to {a}.",
+                            "zh": f"射门前最后一传：{p}传给{a}。"})
+            else:
+                out.append({"code": "no_key_pass", "en": f"No team-mate passed to {a} right before the shot.",
+                            "zh": f"射门前没有队友直接传球给{a}。"})
+        if kind == "goal":
+            s = e["score_after"]
+            hi, lo = max(s.values()), min(s.values())
+            if s["a"] == s["b"]:
+                en, zh = f"{tn} scored this goal and drew level at {hi}-{lo}.", f"这个球是{tn}打进的，{tn}把比分扳平为{hi}-{lo}。"
+            elif s[e["team"]] > s[_other(e["team"])]:
+                en, zh = f"{tn} scored this goal and now lead {hi}-{lo}.", f"这个球是{tn}打进的，{tn}以{hi}-{lo}领先。"
+            else:
+                en, zh = f"{tn} scored this goal but {on} still lead {hi}-{lo}.", f"这个球是{tn}打进的，但{on}仍以{hi}-{lo}领先。"
+            out.append({"code": "scoring_team", "en": f"Scoring team: {en}", "zh": f"进球方：{zh}"})
+        if kind in ("pressure_win", "high_regain") and e.get("target"):
+            out.append({"code": "ball_winner", "en": f"Ball won by {a} ({tn}) from {self.name(e['target'])} ({on}).",
+                        "zh": f"夺回球权：{a}（{tn}）从{self.name(e['target'])}（{on}）脚下。"})
+        elif kind in ("pressure_win", "high_regain"):
+            out.append({"code": "ball_winner", "en": f"Ball won by {a} ({tn}).", "zh": f"夺回球权：{a}（{tn}）。"})
+        return out
 
 
 def analyse(match):

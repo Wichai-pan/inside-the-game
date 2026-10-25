@@ -1,122 +1,422 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Inside the Game</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inside the Game · Match Centre</title>
+<meta name="description" content="One synthetic football match, narrated live and fact-checked for every kind of fan by a Microsoft Agent Framework workflow.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./assets/theme.css">
 <style>
-:root{--bg:#0a1418;--panel:#102026;--panel2:#152a31;--line:#294047;--text:#f2f5ec;--muted:#a3b9ba;--mint:#b5e899;--gold:#f4c56e;--cyan:#63c8d0;--coral:#ff8068}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 75% 0%,#173b3b,#0a1418 46%);color:var(--text);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif}
-button,select{font:inherit}button{cursor:pointer}a{color:var(--mint)}main{max-width:1320px;margin:auto;padding:24px}
-.eyebrow{color:var(--mint);font-size:11px;font-weight:800;letter-spacing:.18em}h1{font-size:clamp(28px,4.2vw,48px);line-height:1.05;letter-spacing:-.04em;margin:10px 0}p{margin:0}.lead{color:var(--muted);max-width:780px}
-.top{display:flex;justify-content:space-between;gap:20px;align-items:start;margin-bottom:20px}.badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.badge{white-space:nowrap;border:1px solid #4e756b;background:#1b3832;border-radius:99px;padding:6px 11px;color:#d0f0d6;font-size:12px}
-.bar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:12px 16px;background:var(--panel);border:1px solid var(--line);border-radius:14px;margin-bottom:16px}.bar label,.small{font-size:12px;color:var(--muted)}.group{display:flex;gap:6px;align-items:center}
-select{border:1px solid #3b5d5e;border-radius:8px;background:#193039;color:var(--text);padding:6px 9px}.seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}.seg button{border:0;background:#183039;color:var(--muted);padding:7px 11px}.seg button.active{background:#2c5041;color:var(--mint)}
-.grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,.95fr);gap:16px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}.head{padding:13px 17px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center}.head h2{font-size:14px;margin:0}
-.scoreboard{display:flex;align-items:center;gap:12px;padding:12px 17px;border-bottom:1px solid var(--line);background:var(--panel2)}.team{display:flex;align-items:center;gap:8px;font-weight:750}.team i{width:12px;height:12px;border-radius:50%;display:inline-block}.goals{font-size:24px;font-weight:850;font-variant-numeric:tabular-nums;padding:0 6px}.clock{margin-left:auto;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
-.field{position:relative;padding:14px;background:repeating-linear-gradient(90deg,#16382c 0,#16382c 12.5%,#183c2e 12.5%,#183c2e 25%)}svg{width:100%;height:auto;display:block}.lines{fill:none;stroke:#d3e8d0;stroke-width:.35}.player{stroke:#0d2224;stroke-width:.35}.player.focus{stroke:#fff;stroke-width:.8}.player.dim{opacity:.45}.ball{fill:var(--coral);stroke:white;stroke-width:.45}.lbl{font-size:1.4px;font-weight:800;text-anchor:middle;dominant-baseline:central;fill:#0a1b1e;pointer-events:none}.tag{font-size:2.2px;font-weight:700;fill:#fff;text-anchor:middle;paint-order:stroke;stroke:#0a1b1e;stroke-width:.5px}.trail{fill:none;stroke:var(--coral);stroke-width:.35;stroke-dasharray:1 .8;opacity:.8}
-.lower{position:absolute;left:22px;right:22px;bottom:22px;background:rgba(9,22,24,.92);border:1px solid #47705f;border-left:5px solid var(--mint);border-radius:10px;padding:10px 14px;transform:translateY(8px);opacity:0;transition:.25s}.lower.show{opacity:1;transform:none}.lower b{display:block;color:var(--mint);font-size:11px;letter-spacing:.12em;text-transform:uppercase}.lower span{font-size:15px;font-weight:650}
-.transport{padding:13px 17px;display:flex;align-items:center;gap:12px}.play{width:40px;height:40px;border:0;border-radius:50%;background:var(--mint);font-weight:800;flex:none}input[type=range]{flex:1;accent-color:var(--mint)}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line)}.stat{padding:11px 14px;border-right:1px solid var(--line)}.stat:last-child{border:0}.stat small{display:block;color:var(--muted);font-size:11px}.stat b{font-size:17px;font-variant-numeric:tabular-nums}.posbar{height:8px;border-radius:9px;overflow:hidden;display:flex;margin-top:6px}.posbar div{height:100%}
-.now{padding:18px;background:linear-gradient(135deg,#214335,#173139);min-height:150px}.kicker{font-size:11px;font-weight:800;color:var(--mint);letter-spacing:.12em;text-transform:uppercase}.now p{font-size:19px;font-weight:650;line-height:1.5;margin:9px 0}.casual .now p{font-size:22px}.src{color:#bdd4c9;font-size:11px}.src em{font-style:normal;border:1px solid #4e756b;border-radius:6px;padding:1px 6px;margin-right:6px}
-.why{padding:12px 18px;border-top:1px solid var(--line)}.why h3,.facts h3{margin:0 0 6px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}.why ul,.facts ul{margin:0;padding-left:18px;font-size:13px;line-height:1.7;color:#d8e4e1}.facts{padding:12px 18px;border-top:1px solid var(--line)}.facts li{font-size:12px;color:#c4d4d1}.facts code{color:var(--muted);font-size:10px}
-.feed{padding:6px 10px 12px;max-height:330px;overflow:auto}.item{width:100%;display:grid;grid-template-columns:40px 1fr;text-align:left;gap:8px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--text);padding:9px}.item:hover,.item.active{background:#1d3838;border-color:#365a58}.item.dim{opacity:.45}.item time{color:var(--mint);font-size:12px}.item b{font-size:13px;line-height:1.4;font-weight:600}.item small{display:block;color:var(--muted);margin-top:3px;font-size:11px}
-.lower-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}.ticker{max-height:260px;overflow:auto;padding:6px 16px 12px;font-size:12px}.ticker div{display:grid;grid-template-columns:44px 1fr;gap:8px;padding:5px 0;border-bottom:1px solid #1d3439}.ticker time{color:var(--muted);font-variant-numeric:tabular-nums}.recap{padding:16px 18px;font-size:15px;line-height:1.65}.recap .src{margin-top:10px}
-.pipeline{padding:14px 18px;font-size:13px;color:#d8e4e1}.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 12px}.flow span{border:1px solid #3b5d5e;border-radius:8px;padding:4px 8px;background:#183039;font-size:12px}.flow span.llm{border-color:#679b77;color:var(--mint)}.flow i{color:var(--muted);font-style:normal}
-.analyst-only{display:none}.analyst .analyst-only{display:block}.analyst .stats.analyst-only{display:grid}.casual-only{display:block}.analyst .casual-only{display:none}
-.pcard{border-bottom:1px solid var(--line);background:#132b2a;padding:14px 17px}.pc-top{display:flex;gap:10px;align-items:center}.pc-top i{width:30px;height:30px;border-radius:50%;flex:none;border:2px solid #fff}.pc-top b{display:block;font-size:16px}.pc-top small{color:var(--muted);font-size:12px}.pc-next{margin-left:auto;border:1px solid #3b5d5e;border-radius:8px;background:#183039;color:var(--mint);padding:6px 9px;font-size:12px}
-.pc-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.pc-stats div{background:#183039;border-radius:8px;padding:7px 9px}.pc-stats small{display:block;color:var(--muted);font-size:10.5px;line-height:1.3}.pc-stats b{font-size:15px;font-variant-numeric:tabular-nums}
-.pc-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.pc-badges span{font-size:11px;border-radius:99px;padding:3px 9px;background:#2c5041;color:var(--mint)}.pc-badges span.hot{background:#5a2f27;color:#ffc2b5}
-.pc-feed{margin-top:10px;max-height:118px;overflow:auto;font-size:12px;color:#c9d8d5}.pc-feed div{display:grid;grid-template-columns:40px 1fr;gap:6px;padding:3px 0}.pc-feed time{color:var(--mint)}
-.role{font-size:12px;color:#ffe1a6;margin:-2px 0 8px}.ptrail{fill:none;stroke:#fff;stroke-width:.45;opacity:.7}.player.me{stroke:#fff;stroke-width:.9}.tag.me{fill:#ffe1a6}
-.subs{position:absolute;left:50%;transform:translateX(-50%);bottom:18px;max-width:calc(100% - 40px);background:rgba(0,0,0,.78);border-radius:8px;padding:7px 14px;text-align:center;font-size:16px;font-weight:600;line-height:1.45}.subs b{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}.subs.analysis{border:1px solid #679b77}.subs.analysis b{color:var(--mint)}
-.ticker .an span{color:var(--mint)}.ticker .drop{opacity:.45;text-decoration:line-through}.ticker small{display:block;color:var(--muted);font-size:10.5px}.lat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.lat div{background:#183039;border-radius:8px;padding:8px 10px}.lat small{display:block;color:var(--muted);font-size:11px}.lat b{font-size:17px}
-footer{display:flex;justify-content:space-between;gap:14px;color:var(--muted);font-size:11px;margin-top:18px;flex-wrap:wrap}
-@media(max-width:960px){.grid,.lower-grid{grid-template-columns:1fr}.top{flex-direction:column}.badges{justify-content:flex-start}}
-@media(max-width:560px){.subs{font-size:13px;bottom:8px}.pc-stats{grid-template-columns:repeat(2,1fr)}main{padding:16px}.stats{grid-template-columns:repeat(2,1fr)}.stat:nth-child(2){border-right:0}.lower{display:none}.scoreboard{flex-wrap:wrap}}
-</style></head><body class="casual"><main>
-<header class="top"><div><div class="eyebrow">INSIDE THE GAME</div><h1 data-i18n="title">One match. Every fan.</h1><p class="lead" data-i18n="lead">A synthetic football feed goes through an agent workflow: it interprets the events, picks the moments that matter, explains why, and writes fact-checked commentary for each viewer.</p></div>
-<div class="badges"><span class="badge" data-i18n="b1">Synthetic data</span><span class="badge">Microsoft Agent Framework</span><span class="badge" data-i18n="b3">Every line fact-checked</span></div></header>
-<section class="bar">
-<div class="group"><label for="seed" data-i18n="match">Match</label><select id="seed"></select></div>
-<div class="group"><label data-i18n="viewer">Viewer</label><div class="seg" id="profile"><button data-v="casual" class="active" data-i18n="casual">Casual fan</button><button data-v="analyst" data-i18n="analyst">Analyst</button></div></div>
-<div class="group"><label data-i18n="language">Language</label><div class="seg" id="lang"><button data-v="en" class="active">English</button><button data-v="zh">中文</button></div></div>
-<div class="group"><label for="follow" data-i18n="follow">Follow</label><select id="follow"></select></div>
-<div class="group"><label for="player" data-i18n="playerl">Player focus</label><select id="player"></select></div>
-<a href="./studio.html" id="studio-link" style="margin-left:auto;font-size:13px" data-i18n="studio">Post-match studio →</a>
+/* intro */
+.intro{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:var(--s6);align-items:end;padding-top:28px;padding-bottom:20px}
+.intro h1{font:800 clamp(38px,4.6vw,62px)/.92 var(--display);letter-spacing:-.01em;text-transform:uppercase;margin:12px 0 14px}
+.intro h1 em{font-style:normal;color:var(--accent)}
+.intro .lead{color:var(--muted);font-size:16px;max-width:620px}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px}
+.try{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px 18px}
+.try h2{font:700 11px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:12px}
+.try ol{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.try li{display:grid;grid-template-columns:26px 1fr;gap:12px;align-items:center;font-size:14px;color:var(--muted)}
+.try li b{color:var(--text);font-weight:600}
+.try li i{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:700 12px/1 var(--ui);font-style:normal;border:1px solid var(--line-2);color:var(--muted);transition:.2s}
+.try li.done i{background:var(--accent);border-color:transparent;color:var(--accent-ink)}
+.try li.done{color:var(--dim)}.try li.done b{color:var(--muted)}
+
+/* control bar */
+.controls{display:flex;flex-wrap:wrap;gap:14px 18px;align-items:flex-end;padding:14px 18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:var(--s4)}
+.ctl{min-width:0}
+.why:has(ul:empty){display:none}
+
+/* layout */
+.layout{display:grid;grid-template-columns:minmax(0,1.62fr) minmax(330px,1fr);gap:var(--s4);align-items:start}
+.side{display:grid;gap:var(--s4);min-width:0}
+.analyst .layout{grid-template-columns:minmax(0,1.5fr) minmax(360px,1fr)}
+
+/* broadcast screen */
+.broadcast{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow)}
+.screen{position:relative;background:#0b2a1a;line-height:0}
+.screen svg{width:100%;height:auto;display:block}
+.pl-body{stroke:rgba(0,0,0,.45);stroke-width:.22}
+.pl-num{font:700 1.55px var(--display);text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.pl-tag{font:700 2.1px var(--ui);fill:#fff;text-anchor:middle;paint-order:stroke;stroke:rgba(0,0,0,.75);stroke-width:.45px;pointer-events:none}
+.pl-tag.me{fill:var(--warn)}
+.pl-halo{fill:none;stroke-width:.32;opacity:0}
+.pl.focus .pl-halo{opacity:1;stroke:#fff}
+.pl.me .pl-halo{opacity:1;stroke:var(--warn);stroke-width:.45}
+.pl.dim{opacity:.35}
+.pl{cursor:pointer;transition:opacity .2s}
+.pl:hover .pl-body{stroke:#fff;stroke-width:.35}
+.trail{fill:none;stroke:#fff;stroke-width:.3;stroke-dasharray:.9 .7;opacity:.85}
+.ptrail{fill:none;stroke:var(--warn);stroke-width:.4;opacity:.75;stroke-linecap:round;stroke-linejoin:round}
+.ball{fill:#fff;stroke:#111;stroke-width:.18}
+.ball-sh{fill:rgba(0,0,0,.35)}
+
+.bug{position:absolute;top:14px;left:14px;display:flex;align-items:stretch;line-height:1;border-radius:8px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.45);font-family:var(--display);z-index:2}
+.bug .t{display:flex;align-items:center;gap:8px;background:rgba(8,12,16,.92);padding:0 12px;font-weight:700;font-size:20px;letter-spacing:.04em}
+.bug .t i{width:5px;align-self:stretch;margin:6px 0}
+.bug .sc{display:flex;align-items:center;background:#f5f7f9;color:#0a0f14;font-weight:800;font-size:24px;padding:6px 12px;letter-spacing:.02em}
+.bug .ck{display:flex;align-items:center;background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:20px;padding:0 12px;min-width:70px;justify-content:center}
+.screen-tr{position:absolute;top:14px;right:14px;display:flex;gap:6px;line-height:1;z-index:2}
+.screen-tr .chip{background:rgba(8,12,16,.8);border-color:transparent;color:#dfe6ec}
+.screen-tr .chip.rec .dot{background:var(--live);box-shadow:0 0 0 3px rgba(255,75,85,.25)}
+
+.bigplay{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:14px;background:radial-gradient(closest-side,rgba(4,8,10,.55),rgba(4,8,10,.25));border:0;color:#fff;line-height:1.4;z-index:3;transition:opacity .25s}
+.bigplay[hidden]{display:none}
+.bigplay .pb{width:84px;height:84px;border-radius:50%;background:var(--accent);display:grid;place-items:center;box-shadow:0 0 0 10px rgba(78,240,156,.18),0 12px 40px rgba(0,0,0,.5);transition:transform .2s}
+.bigplay:hover .pb{transform:scale(1.06)}
+.bigplay .pb svg{width:30px;height:30px;margin-left:5px}
+.bigplay span{font:700 15px/1.3 var(--ui);background:rgba(8,12,16,.75);padding:8px 14px;border-radius:99px;max-width:90%;text-align:center}
+
+.capbar{position:absolute;left:0;right:0;bottom:18px;display:flex;justify-content:center;padding:0 18px;pointer-events:none;line-height:1.4;z-index:2}
+.subs{max-width:760px;background:rgba(6,9,12,.86);border-radius:10px;padding:10px 16px 11px;text-align:center;font-size:19px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.4);border-top:3px solid var(--voice-pbp)}
+.subs b{display:block;font:700 10.5px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.subs.analysis{border-top-color:var(--voice-an)}.subs.analysis b{color:var(--voice-an)}
+.lower{position:absolute;left:18px;bottom:18px;max-width:min(560px,calc(100% - 36px));background:rgba(6,9,12,.9);border-left:5px solid var(--accent);border-radius:8px;padding:10px 14px;line-height:1.4;transform:translateY(8px);opacity:0;transition:.25s;z-index:2}
+.lower.show{opacity:1;transform:none}
+.lower b{display:block;color:var(--accent);font:700 11px/1.2 var(--ui);letter-spacing:.12em;text-transform:uppercase}
+.lower span{font-size:15px;font-weight:600}
+
+/* transport */
+.transport{display:flex;align-items:center;gap:14px;padding:12px 16px;border-top:1px solid var(--line)}
+.play{width:42px;height:42px;border:0;border-radius:50%;background:var(--text);color:#0a0f14;display:grid;place-items:center;flex:none}
+.play svg{width:16px;height:16px}
+.time{font:600 13px/1 var(--mono);color:var(--muted);white-space:nowrap}
+.tl{position:relative;flex:1;height:30px;min-width:80px}
+.tl-track{position:absolute;left:0;right:0;top:13px;height:4px;border-radius:4px;background:var(--surface-4)}
+.tl-fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--accent)}
+.tl input{position:absolute;inset:0;width:100%;margin:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer}
+.tl input::-webkit-slider-runnable-track{height:30px;background:transparent}
+.tl input::-moz-range-track{height:30px;background:transparent}
+.tl input::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;margin-top:8px;box-shadow:0 0 0 4px rgba(78,240,156,.3)}
+.tl input::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(78,240,156,.3)}
+.mk{position:absolute;top:9px;width:4px;height:12px;margin-left:-2px;border-radius:2px;background:var(--muted);border:0;padding:0;z-index:2}
+.mk.goal{top:5px;width:10px;height:10px;margin-left:-5px;border-radius:50%;border:2px solid var(--surface)}
+.mk:hover{transform:scale(1.35)}
+
+/* possession (casual) and stat compare (analyst) */
+.poss{padding:14px 18px 16px;border-top:1px solid var(--line)}
+.poss-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.poss-top b{font:800 26px/1 var(--display)}
+.poss-top small{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.posbar{height:8px;border-radius:8px;overflow:hidden;display:flex;margin-top:9px;gap:2px}
+.posbar div{height:100%;transition:width .4s}
+.poss-names{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px}
+.cmp{display:grid;grid-template-columns:48px 1fr auto 1fr 48px;gap:9px 10px;align-items:center;padding:14px 18px;font-size:13px}
+.cmp .v{font:600 13px/1 var(--mono)}.cmp .v.r{text-align:right}
+.cmp .l{text-align:center;color:var(--muted);font-size:11.5px;white-space:nowrap}
+.bar{height:6px;border-radius:6px;background:var(--surface-3);display:flex;overflow:hidden}
+.bar.left{justify-content:flex-end}.bar div{height:100%;border-radius:6px;transition:width .4s}
+.cmp-head{display:flex;justify-content:space-between;padding:12px 18px 0;font:700 12px/1 var(--ui);color:var(--muted)}
+.cmp-head span{display:flex;align-items:center;gap:6px}.cmp-head i{width:8px;height:8px;border-radius:50%}
+
+/* live commentary */
+.now{padding:20px 20px 18px;background:linear-gradient(160deg,rgba(78,240,156,.08),transparent 55%)}
+.kicker{display:flex;gap:8px;align-items:center;font:700 11px/1.2 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.kicker .clk{font-family:var(--mono);color:var(--muted);letter-spacing:0}
+.now-text{font-size:23px;font-weight:600;line-height:1.38;margin:12px 0 10px;letter-spacing:-.01em}
+.analyst .now-text{font-size:17.5px;line-height:1.5}
+.role{font-size:13px;color:var(--warn);margin:-2px 0 10px}
+.src{font-size:11.5px;color:var(--dim);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.src em{font-style:normal;font-weight:700;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line-2);border-radius:99px;padding:2px 8px;color:var(--muted)}
+.src em.ok{border-color:rgba(78,240,156,.35);color:var(--accent)}
+.metrics{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.metrics span{background:var(--surface-3);border-radius:8px;padding:6px 9px;font-size:11px;color:var(--muted);line-height:1.2}
+.metrics span b{display:block;font:600 14px/1.2 var(--mono);color:var(--text);margin-top:2px}
+.metrics span.flag{display:flex;align-items:center;color:var(--warn);background:rgba(255,198,92,.1)}
+.sub{padding:14px 20px;border-top:1px solid var(--line)}
+.sub h3{font:700 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+.sub ul{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.why li{position:relative;padding-left:16px;font-size:14.5px;line-height:1.5;color:#d6dee6}
+.why li::before{content:"";position:absolute;left:0;top:.62em;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.analyst .why li{font-size:13px}
+.facts li{font-size:12px;color:var(--muted);line-height:1.5}
+.facts code{font:500 10px var(--mono);color:var(--dim);margin-left:4px}
+
+/* moments */
+.feed{padding:6px;max-height:420px}
+.item{width:100%;display:grid;grid-template-columns:4px 46px 1fr;text-align:left;gap:12px;border:0;border-radius:10px;background:transparent;color:var(--text);padding:10px 10px 10px 0;transition:background .15s}
+.item:hover{background:var(--surface-2)}.item.active{background:var(--surface-3)}
+.item.dim{opacity:.4}
+.item .stripe{border-radius:4px}
+.item time{font:600 12px/1.5 var(--mono);color:var(--muted)}
+.item b{display:block;font-size:13.5px;line-height:1.45;font-weight:500}
+.item small{display:flex;gap:6px;align-items:center;color:var(--dim);margin-top:4px;font-size:11px}
+.item small .k{font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.item.goal .k{color:var(--warn)}
+.casual .item b{font-size:14.5px}
+
+/* player focus */
+.pcard{padding:16px 18px;background:linear-gradient(160deg,rgba(255,198,92,.09),transparent 60%)}
+.pc-top{display:flex;gap:12px;align-items:center}
+.pc-av{width:44px;height:44px;border-radius:50%;flex:none;display:grid;place-items:center;font:800 19px/1 var(--display);box-shadow:0 0 0 2px var(--warn)}
+.pc-top b{display:block;font-size:16px}
+.pc-top small{color:var(--muted);font-size:12px}
+.pc-actions{margin-left:auto;display:flex;gap:6px}
+.pc-actions button{border:1px solid var(--line-2);background:var(--surface-2);color:var(--text);border-radius:99px;padding:6px 11px;font-size:12px;font-weight:600;white-space:nowrap}
+.pc-actions button.x{padding:6px 10px;color:var(--muted)}
+.pc-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px}
+.pc-stats div{background:var(--surface-2);border-radius:10px;padding:8px 10px}
+.pc-stats small{display:block;color:var(--dim);font-size:10.5px;line-height:1.3}
+.pc-stats b{font:700 18px/1.3 var(--display);letter-spacing:.02em}
+.pc-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.pc-badges:empty{display:none}
+.pc-badges span{font-size:11px;font-weight:600;border-radius:99px;padding:4px 10px;background:var(--accent-soft);color:var(--accent)}
+.pc-badges span.hot{background:rgba(255,75,85,.14);color:#ff9aa0}
+.pc-feed{margin-top:12px;max-height:118px;font-size:12px;color:var(--muted)}
+.pc-feed div{display:grid;grid-template-columns:40px 1fr;gap:6px;padding:3px 0}
+.pc-feed time{font-family:var(--mono);color:var(--dim)}
+
+/* lower sections */
+.lower-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:var(--s4);margin-top:var(--s4)}
+.analyst .lower-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.recap{padding:18px 20px 20px}
+.recap p{font-size:17px;line-height:1.6}
+.analyst .recap p{font-size:14.5px}
+.recap .src{margin-top:12px}
+.recap.wait p{color:var(--dim);font-size:14px}
+.ticker{max-height:300px;padding:6px 18px 14px;font-size:12.5px}
+.ticker div{display:grid;grid-template-columns:44px 1fr;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
+.ticker time{font:500 11.5px/1.6 var(--mono);color:var(--dim)}
+.ticker .an span{color:var(--voice-an)}
+.ticker .drop{opacity:.45}.ticker .drop span{text-decoration:line-through}
+.ticker small{display:block;color:var(--dim);font-size:10.5px;margin-top:2px}
+.pipeline{padding:16px 20px 20px;font-size:13.5px;color:#cdd6df;line-height:1.6}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 14px}
+.flow span{border:1px solid var(--line-2);border-radius:8px;padding:5px 9px;background:var(--surface-2);font-size:12px;font-weight:600;color:var(--muted)}
+.flow span.llm{border-color:rgba(143,184,255,.45);color:var(--voice-an);background:rgba(143,184,255,.08)}
+.flow span.llm::before{content:"✦ ";}
+.flow i{color:var(--dim);font-style:normal}
+.lat{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.lat div{background:var(--surface-2);border-radius:10px;padding:9px 11px}
+.lat small{display:block;color:var(--dim);font-size:10.5px;line-height:1.3}
+.lat b{font:700 18px/1.3 var(--display)}
+.lat-h{margin-top:14px;font:700 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.wide{grid-column:1/-1}
+
+.analyst-only{display:none!important}.analyst .analyst-only{display:block!important}
+.analyst .casual-only{display:none!important}.analyst .metrics.analyst-only{display:flex!important}.analyst .cmp.analyst-only{display:grid!important}
+.analyst .side{grid-auto-flow:row}
+
+@media(max-width:1080px){
+  .layout,.analyst .layout{grid-template-columns:1fr}
+  .analyst .lower-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:820px){
+  .intro{grid-template-columns:1fr;gap:var(--s4);padding-top:var(--s5)}
+  .lower-grid,.analyst .lower-grid{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .intro h1{font-size:42px}
+  .intro .lead{font-size:14.5px}
+  .intro .tags{display:none}
+  .try{padding:12px 14px}.try h2{margin-bottom:8px}.try ol{gap:6px}.try li{font-size:13px;grid-template-columns:22px 1fr;gap:10px}.try li i{width:22px;height:22px;font-size:11px}
+  .try li>span>span{display:none}
+  .controls{display:grid;grid-template-columns:1fr 1fr;padding:14px 16px;gap:12px}
+  .controls .ctl.full{grid-column:1/-1}
+  .controls .select{width:100%}
+  .controls .seg{display:flex}.controls .seg button{flex:1;padding:6px 8px}
+  .bug{top:8px;left:8px;border-radius:6px}
+  .bug .t{font-size:14px;padding:0 7px;gap:5px}.bug .t i{width:4px;margin:4px 0}
+  .bug .sc{font-size:16px;padding:4px 7px}.bug .ck{font-size:14px;min-width:48px;padding:0 7px}
+  .screen-tr{top:8px;right:8px}.screen-tr .chip:not(.rec){display:none}
+  .capbar{position:static;padding:10px 12px;min-height:76px;background:var(--surface);align-items:center}
+  .subs{font-size:15px;box-shadow:none;padding:8px 12px;width:100%}
+  .lower{display:none}
+  .bigplay .pb{width:64px;height:64px}.bigplay span{font-size:13px}
+  .transport{gap:10px;padding:10px 12px;flex-wrap:wrap}
+  .transport .tl{order:3;flex-basis:100%}
+  .transport .seg{margin-left:auto}
+  .pc-stats{grid-template-columns:repeat(2,1fr)}
+  .pc-top{flex-wrap:wrap}.pc-actions{margin-left:0;width:100%}.pc-actions #pc-next{flex:1}
+  .now-text{font-size:20px}
+  .cmp{grid-template-columns:40px 1fr auto 1fr 40px;padding:12px 16px}
+  .lat{grid-template-columns:1fr}
+}
+</style></head>
+<body class="casual">
+<header class="nav"><div class="wrap">
+  <a class="brand" href="./index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="#4ef09c"/><path d="M8 22V10M8 10h7M24 10v12M17 10h7M16 22h8" stroke="#04140b" stroke-width="3" stroke-linecap="round" fill="none"/></svg><span>Inside the Game</span></a>
+  <nav><a href="./index.html" aria-current="page" data-i18n="navlive">Match centre</a><a href="./studio.html" id="nav-studio" data-i18n="navstudio">Studio</a><a href="./about.html" data-i18n="navabout">How it works</a></nav>
+  <div class="right"><a href="./studio.html" id="studio-link" class="btn primary" data-i18n="studio">Post-match studio →</a></div>
+</div></header>
+
+<section class="wrap intro">
+  <div>
+    <div class="eyebrow" data-i18n="eyebrow">AI match centre · Microsoft Agent Framework</div>
+    <h1><span data-i18n="title1">One match.</span><br><em data-i18n="title2">Every fan.</em></h1>
+    <p class="lead" data-i18n="lead">Agents watch a football feed, pick the moments that matter and talk you through them: in plain words or in numbers, in English or Chinese. Every line is checked against the data before you hear it.</p>
+    <div class="tags"><span class="chip accent"><span class="dot"></span><span data-i18n="b1">Synthetic match</span></span><span class="chip" data-i18n="b3">Every line fact-checked</span><span class="chip" data-i18n="b4">2 viewers × 2 languages</span></div>
+  </div>
+  <aside class="try" aria-label="Quick start">
+    <h2 data-i18n="tryh">Try it in 30 seconds</h2>
+    <ol>
+      <li id="step-play"><i>1</i><span><b data-i18n="s1b">Press play.</b> <span data-i18n="s1">Captions appear as the commentators speak.</span></span></li>
+      <li id="step-view"><i>2</i><span><b data-i18n="s2b">Switch to Analyst.</b> <span data-i18n="s2">Same match, denser commentary and evidence.</span></span></li>
+      <li id="step-more"><i>3</i><span><b data-i18n="s3b">Pick a player or 中文.</b> <span data-i18n="s3">Click any dot on the pitch to follow them.</span></span></li>
+    </ol>
+  </aside>
 </section>
-<div class="grid"><div>
-<section class="card">
-<div class="scoreboard"><span class="team"><i id="ca"></i><span id="na"></span></span><span class="goals" id="score">0 – 0</span><span class="team"><span id="nb"></span><i id="cb"></i></span><span class="clock" id="clock">0:00</span></div>
-<div class="field"><svg id="pitch" viewBox="-56 -37 112 74" role="img" aria-label="Pitch with player positions"><g class="lines"><rect x="-52.5" y="-34" width="105" height="68"/><line x1="0" y1="-34" x2="0" y2="34"/><circle cx="0" cy="0" r="9.15"/><rect x="-52.5" y="-20.16" width="16.5" height="40.32"/><rect x="36" y="-20.16" width="16.5" height="40.32"/><rect x="-52.5" y="-9.16" width="5.5" height="18.32"/><rect x="47" y="-9.16" width="5.5" height="18.32"/><rect x="-54.5" y="-3.66" width="2" height="7.32"/><rect x="52.5" y="-3.66" width="2" height="7.32"/></g><g id="dots"></g></svg>
-<div class="lower" id="lower"><b id="lower-head"></b><span id="lower-text"></span></div>
-<div class="subs" id="subs" hidden><b id="subs-voice"></b><span id="subs-text"></span></div></div>
-<div class="transport"><button id="play" class="play" aria-label="Play">▶</button><input id="seek" type="range" min="0" max="180" step="0.1" value="0" aria-label="Timeline"><div class="seg" id="speed"><button data-v="1" class="active">1×</button><button data-v="2">2×</button><button data-v="4">4×</button></div></div>
-<div class="casual-only" style="padding:12px 17px;border-top:1px solid var(--line)"><small class="small" data-i18n="possession">Possession</small><div class="posbar"><div id="pa"></div><div id="pb"></div></div><div class="small" style="display:flex;justify-content:space-between;margin-top:4px"><span id="pat"></span><span id="pbt"></span></div></div>
-<div class="stats analyst-only"><div class="stat"><small data-i18n="possession">Possession</small><b id="s-pos">–</b></div><div class="stat"><small data-i18n="shots">Shots (on target)</small><b id="s-shots">–</b></div><div class="stat"><small>xG</small><b id="s-xg">–</b></div><div class="stat"><small data-i18n="passpct">Pass completion</small><b id="s-pass">–</b></div></div>
+
+<div class="wrap">
+<section class="controls" aria-label="Viewer settings">
+  <div class="ctl full"><label class="field-label" for="seed" data-i18n="match">Match</label><select id="seed" class="select"></select></div>
+  <div class="ctl"><span class="field-label" data-i18n="viewer">Viewer</span><div class="seg" id="profile"><button data-v="casual" class="active" data-i18n="casual">Casual fan</button><button data-v="analyst" data-i18n="analyst">Analyst</button></div></div>
+  <div class="ctl"><span class="field-label" data-i18n="language">Language</span><div class="seg" id="lang"><button data-v="en" class="active">English</button><button data-v="zh">中文</button></div></div>
+  <div class="ctl"><label class="field-label" for="follow" data-i18n="follow">Follow</label><select id="follow" class="select"></select></div>
+  <div class="ctl"><label class="field-label" for="player" data-i18n="playerl">Player focus</label><select id="player" class="select"></select></div>
 </section>
-</div>
-<aside class="card">
-<div class="pcard" id="pcard" hidden><div class="pc-top"><i id="pc-dot"></i><div><b id="pc-name"></b><small id="pc-meta"></small></div><button class="pc-next" id="pc-next" data-i18n="next">Next involvement ›</button></div>
-<div class="pc-stats" id="pc-stats"></div><div class="pc-badges" id="pc-badges"></div><div class="pc-feed" id="pc-feed"></div></div>
-<div class="head"><h2 data-i18n="live">Live commentary</h2><span class="small" id="viewer-note"></span></div>
-<div class="now"><div class="kicker" id="moment-title"></div><p id="now-text"></p><div class="role" id="role"></div><div class="src" id="source"></div></div>
-<div class="why"><h3 data-i18n="whyh">Why it matters</h3><ul id="why"></ul></div>
-<div class="facts analyst-only"><h3 data-i18n="evidence">Evidence from the feed</h3><ul id="facts"></ul></div>
-<div class="head"><h2 data-i18n="moments">Key moments</h2><span class="small" id="count"></span></div><div class="feed" id="feed"></div>
-</aside></div>
+
+<main class="layout">
+  <div style="min-width:0">
+    <section class="broadcast">
+      <div class="screen">
+        <svg id="pitch" viewBox="-56 -37 112 74" role="img" aria-label="Pitch with player positions">
+          <defs><pattern id="mow" width="17.5" height="74" patternUnits="userSpaceOnUse" x="-52.5"><rect width="8.75" height="74" fill="#1c6b3c"/><rect x="8.75" width="8.75" height="74" fill="#1a6338"/></pattern>
+          <radialGradient id="vig" cx="50%" cy="45%" r="75%"><stop offset="60%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".35"/></radialGradient></defs>
+          <rect x="-56" y="-37" width="112" height="74" fill="#175c33"/>
+          <rect x="-56" y="-37" width="112" height="74" fill="url(#mow)"/>
+          <g fill="none" stroke="rgba(255,255,255,.82)" stroke-width=".26">
+            <rect x="-52.5" y="-34" width="105" height="68"/><line x1="0" y1="-34" x2="0" y2="34"/><circle r="9.15"/>
+            <rect x="-52.5" y="-20.16" width="16.5" height="40.32"/><rect x="36" y="-20.16" width="16.5" height="40.32"/>
+            <rect x="-52.5" y="-9.16" width="5.5" height="18.32"/><rect x="47" y="-9.16" width="5.5" height="18.32"/>
+            <path d="M-36 -7.31A9.15 9.15 0 0 1 -36 7.31M36 -7.31A9.15 9.15 0 0 0 36 7.31"/>
+            <path d="M-52.5 -33A1 1 0 0 0 -51.5 -34M51.5 -34A1 1 0 0 0 52.5 -33M52.5 33A1 1 0 0 0 51.5 34M-51.5 34A1 1 0 0 0 -52.5 33"/>
+            <rect x="-54.6" y="-3.66" width="2.1" height="7.32" stroke-width=".22"/><rect x="52.5" y="-3.66" width="2.1" height="7.32" stroke-width=".22"/>
+          </g>
+          <g fill="rgba(255,255,255,.85)"><circle r=".35"/><circle cx="-41.5" r=".3"/><circle cx="41.5" r=".3"/></g>
+          <rect x="-56" y="-37" width="112" height="74" fill="url(#vig)" pointer-events="none"/>
+          <g id="trails"></g><g id="dots"></g><g id="ballg"><ellipse class="ball-sh" id="ball-sh" rx=".85" ry=".45"/><circle class="ball" id="ball" r=".78"/></g>
+        </svg>
+        <div class="bug" aria-live="off"><div class="t"><i id="ca"></i><span id="na"></span></div><div class="sc num" id="score">0 – 0</div><div class="t"><span id="nb"></span><i id="cb"></i></div><div class="ck num" id="clock">0:00</div></div>
+        <div class="screen-tr"><span class="chip rec"><span class="dot"></span><span data-i18n="replay">Replay</span></span><span class="chip" id="speed-chip">1×</span></div>
+        <div class="lower" id="lower"><b id="lower-head"></b><span id="lower-text"></span></div>
+        <div class="capbar"><div class="subs" id="subs" hidden aria-live="polite"><b id="subs-voice"></b><span id="subs-text"></span></div></div>
+        <button class="bigplay" id="bigplay" aria-label="Play"><span class="pb"><svg viewBox="0 0 24 24"><path d="M5 3l16 9-16 9z" fill="#04140b"/></svg></span><span id="bigplay-hint"></span></button>
+      </div>
+      <div class="transport">
+        <button id="play" class="play" aria-label="Play"></button>
+        <span class="time" id="time">0:00 / 0:00</span>
+        <div class="tl"><div class="tl-track"><div class="tl-fill" id="tl-fill"></div></div><input id="seek" type="range" min="0" max="180" step="0.1" value="0" aria-label="Timeline"><div id="marks"></div></div>
+        <div class="seg" id="speed"><button data-v="1" class="active">1×</button><button data-v="2">2×</button><button data-v="4">4×</button></div>
+      </div>
+      <div class="poss casual-only">
+        <div class="poss-top"><b id="pat-n" class="num">50%</b><small data-i18n="possession">Possession</small><b id="pbt-n" class="num">50%</b></div>
+        <div class="posbar"><div id="pa"></div><div id="pb"></div></div>
+        <div class="poss-names"><span id="pat"></span><span id="pbt"></span></div>
+      </div>
+    </section>
+    <section class="card analyst-only" style="margin-top:var(--s4)">
+      <div class="card-h"><h2 data-i18n="mstats">Match stats</h2><span class="meta" data-i18n="live2">Updates with every event</span></div>
+      <div class="cmp-head"><span><i id="ka"></i><span id="kna"></span></span><span><span id="knb"></span><i id="kb"></i></span></div>
+      <div class="cmp" id="stats"></div>
+    </section>
+  </div>
+
+  <aside class="side">
+    <section class="card" id="pcard" hidden><div class="pcard">
+      <div class="pc-top"><div class="pc-av" id="pc-dot"></div><div style="min-width:0"><b id="pc-name"></b><small id="pc-meta"></small></div><div class="pc-actions"><button id="pc-next" data-i18n="next">Next involvement ›</button><button id="pc-close" class="x" aria-label="Stop following">✕</button></div></div>
+      <div class="pc-stats" id="pc-stats"></div><div class="pc-badges" id="pc-badges"></div><div class="pc-feed scroll" id="pc-feed"></div>
+    </div></section>
+
+    <section class="card">
+      <div class="card-h"><h2 data-i18n="live">Live commentary</h2><span class="meta" id="viewer-note"></span></div>
+      <div class="now">
+        <div class="kicker" id="moment-title"></div>
+        <p class="now-text" id="now-text"></p>
+        <div class="role" id="role"></div>
+        <div class="src" id="source"></div>
+        <div class="metrics analyst-only" id="metrics"></div>
+      </div>
+      <div class="sub why"><h3 data-i18n="whyh">Why it matters</h3><ul id="why"></ul></div>
+      <div class="sub facts analyst-only"><h3 data-i18n="evidence">Evidence from the feed</h3><ul id="facts"></ul></div>
+    </section>
+
+
+    <section class="card">
+      <div class="card-h"><h2 data-i18n="moments">Key moments</h2><span class="meta" id="count"></span></div>
+      <div class="feed scroll" id="feed"></div>
+    </section>
+  </aside>
+</main>
+
 <div class="lower-grid">
-<section class="card"><div class="head"><h2 data-i18n="recap">Automated recap</h2><span class="small" data-i18n="recapnote">Written after the final event</span></div><div class="recap"><p id="recap"></p><div class="src" id="recap-src"></div></div></section>
-<section class="card" id="transcript-card" hidden><div class="head"><h2 data-i18n="transcript">Commentary transcript</h2><span class="small" id="tr-note"></span></div><div class="ticker" id="transcript"></div></section>
-<section class="card analyst-only"><div class="head"><h2 data-i18n="ticker">Event feed with derived metrics</h2><span class="small" id="ev-count"></span></div><div class="ticker" id="ticker"></div></section>
-<section class="card casual-only"><div class="head"><h2 data-i18n="how">How it works</h2></div><div class="pipeline" id="pipeline-casual"></div></section>
+  <section class="card"><div class="card-h"><h2 data-i18n="recap">Automated recap</h2><span class="meta" data-i18n="recapnote">Written after the final event</span></div><div class="recap" id="recap-box"><p id="recap"></p><div class="src" id="recap-src"></div></div></section>
+  <section class="card" id="transcript-card" hidden><div class="card-h"><h2 data-i18n="transcript">Commentary transcript</h2><span class="meta" id="tr-note"></span></div><div class="ticker scroll" id="transcript"></div></section>
+  <section class="card analyst-only"><div class="card-h"><h2 data-i18n="ticker">Event feed with derived metrics</h2><span class="meta" id="ev-count"></span></div><div class="ticker scroll" id="ticker"></div></section>
+  <section class="card casual-only wide"><div class="card-h"><h2 data-i18n="how">How it works</h2><a href="./about.html" class="meta" data-i18n="more">More detail →</a></div><div class="pipeline" id="pipeline-casual"></div></section>
+  <section class="card analyst-only wide"><div class="card-h"><h2 data-i18n="pipe">Agent workflow</h2><a id="json" href="#" class="meta" data-i18n="raw">Open overlay JSON ↗</a></div><div class="pipeline" id="pipeline"></div></section>
 </div>
-<section class="card analyst-only" style="margin-top:16px"><div class="head"><h2 data-i18n="pipe">Agent workflow</h2><a id="json" href="#" class="small" data-i18n="raw">Open overlay JSON ↗</a></div><div class="pipeline" id="pipeline"></div></section>
-<footer><span data-i18n="foot">All teams, players, events and positions are generated by a seeded simulator. No real match data or footage is used.</span><span><a href="https://github.com/Wichai-pan/inside-the-game">Source code</a></span></footer>
-</main><script>
-const T={en:{},zh:{title:'同一场比赛，每位观众各有一版。',lead:'模拟比赛数据流经过一组智能体：解读事件、挑出关键时刻、说明为什么重要，并为每位观众写出经过事实核查的解说。',b1:'模拟数据',b3:'逐句事实核查',match:'比赛',viewer:'观众',casual:'新观众',analyst:'数据分析',language:'语言',follow:'关注',possession:'控球率',shots:'射门（射正）',passpct:'传球成功率',live:'实时解说',whyh:'为什么重要',evidence:'数据依据',moments:'关键时刻',recap:'自动赛后总结',recapnote:'最后一个事件之后生成',ticker:'事件流与派生指标',how:'工作原理',pipe:'智能体工作流',raw:'查看画面叠加 JSON ↗',foot:'所有球队、球员、事件和坐标都由带随机种子的模拟器生成，没有使用真实比赛数据或画面。',research:'早期研究基线（真实公开数据）',playerl:'关注球员',transcript:'解说记录',studio:'赛后演播室 →',next:'下一次参与 ›'}};
-const U={en:{realBadge:'Real match data',realFoot:src=>`Positions and events: ${src}. Used to test the pipeline; the submission uses synthetic data.`,pbpVoice:'Play-by-play',analystVoice:'Analyst',generating:w=>`The analyst agent is writing this line… ready in ${w.toFixed(1)} s on this laptop.`,dropped:'Dropped: play had moved on before it could be said',delay:(d,w)=>`Ready ${d.toFixed(1)} s after the moment${w>0.5?`, said ${w.toFixed(1)} s later when the speaker was free`:''}`,trNote:(p,n)=>`Speaking ${p}% of the time · ${n} analysis line${n===1?'':'s'} dropped`,latency:'Live delay on this laptop',latMed:'Median per line',latFirst:'Passed first time',latAll:'4 viewers at once',nobody:'No player',noTouch:'No involvement yet.',roleLine:(n,r)=>`${n} in this moment: ${r.join(', ')}`,r:{shooter:'shot',scorer:'scored',pass:'passed',receiver:'received the ball',interception:'intercepted',tackle:'won a tackle',tackled:'was tackled',pressure:'pressed',pressed:'was pressed',lost:'lost the ball',saved:'made the save',blocked:'blocked the shot',kickoff:'kicked off',goal_kick:'took the goal kick',keeper_restart:'restarted play'},roles:{AM:'Attacking mid',SUB:'Substitute',GK:'Goalkeeper',RB:'Right back',CB:'Centre back',LB:'Left back',CM:'Midfielder',DM:'Defensive mid',RW:'Right wing',ST:'Striker',LW:'Left wing'},ps:{touches:'Touches',passes:'Passes',diff:'Avg pass difficulty',shots:'Shots (goals)',xg:'xG',wins:'Ball wins / presses',dist:'Distance',top:'Top speed',saves:'Saves'},sprinting:v=>`Sprinting ${v} km/h`,milestone:m=>`${m} m covered`,sprints:n=>`${n} sprint${n>1?'s':''}`,goals:n=>`${n} goal${n>1?'s':''}`,all:'Both teams',waiting:'Waiting for the next key moment',quiet:'Routine play. The commentator stays quiet until something matters.',start:'Press play. Commentary appears only when a moment matters.',agent:'Agent-written',fallback:'Template fallback',retry:n=>`passed fact check on retry ${n}`,first:'passed fact check first time',events:n=>`${n} events`,moments:n=>`${n} moments`,recapWait:'The recap appears when the clip ends. Skip to the end to read it.',casualNote:'Plain language, fewer numbers',analystNote:'Metrics, reasons and evidence',matchName:s=>`Match ${s}`,flow:['Match feed','Analyst','Narrator agent','Fact checker','Claim auditor agent','Producer','Recap agent'],pipe:p=>`${p.lines} commentary lines: ${p.agent_lines} written by the narrator agent (${p.retried_lines} were rewritten after a checker rejected them), ${p.fallback_lines} replaced by a template. Model: ${p.model}, run through ${p.framework}. Build time ${p.seconds}s, offline; the page replays the result without calling a model.`,how:'Events arrive in time order. An analyst computes pass difficulty, ball and shot speed, xG and possession, then picks moments worth talking about. A narrator agent writes a line for your viewer type and language. A fact checker rejects any name, number or action not in the data, and an auditor agent checks who shot, who won the ball, who leads and where.',kinds:{pass:'pass',shot:'shot',interception:'interception',tackle:'tackle',pressure:'pressure',kickoff:'kick-off',goal_kick:'goal kick',keeper_restart:'keeper restart'}},
-zh:{realBadge:'真实比赛数据',realFoot:src=>`坐标与事件：${src}。仅用于测试流程；正式提交使用模拟数据。`,pbpVoice:'逐球解说',analystVoice:'分析',generating:w=>`分析智能体正在写这一句……在这台电脑上还需 ${w.toFixed(1)} 秒。`,dropped:'已放弃：等到能说时比赛已经往下走了',delay:(d,w)=>`关键时刻后 ${d.toFixed(1)} 秒生成${w>0.5?`，等解说空档又过了 ${w.toFixed(1)} 秒才说`:''}`,trNote:(p,n)=>`解说时间占 ${p}% · 放弃 ${n} 句分析`,latency:'这台电脑上的实时延迟',latMed:'每句中位数',latFirst:'一次通过的',latAll:'同时服务 4 种观众',nobody:'不关注',noTouch:'暂未参与。',roleLine:(n,r)=>`${n} 在这一刻：${r.join('，')}`,r:{shooter:'射门',scorer:'进球',pass:'传球',receiver:'接球',interception:'断球',tackle:'抢断成功',tackled:'被抢断',pressure:'逼抢',pressed:'被逼抢',lost:'丢球',saved:'扑救',blocked:'封堵射门',kickoff:'开球',goal_kick:'发球门球',keeper_restart:'门将发球'},roles:{AM:'前腰',SUB:'替补',GK:'门将',RB:'右后卫',CB:'中后卫',LB:'左后卫',CM:'中场',DM:'后腰',RW:'右边锋',ST:'中锋',LW:'左边锋'},ps:{touches:'触球',passes:'传球',diff:'平均传球难度',shots:'射门（进球）',xg:'预期进球',wins:'夺回球权 / 逼抢',dist:'跑动距离',top:'最高速度',saves:'扑救'},sprinting:v=>`冲刺中 ${v} 公里/小时`,milestone:m=>`已跑 ${m} 米`,sprints:n=>`冲刺 ${n} 次`,goals:n=>`进球 ${n} 个`,all:'两队',waiting:'等待下一个关键时刻',quiet:'普通推进阶段，解说暂时留白。',start:'按播放键开始。只有关键时刻才会出现解说。',agent:'智能体生成',fallback:'模板保底',retry:n=>`第 ${n} 次生成通过核查`,first:'首次生成即通过核查',events:n=>`${n} 个事件`,moments:n=>`${n} 个时刻`,recapWait:'片段结束后显示总结，可拖到末尾查看。',casualNote:'通俗说法，少用数字',analystNote:'指标、原因与依据',matchName:s=>`比赛 ${s}`,flow:['比赛数据流','分析','解说智能体','事实核查','声明审核智能体','制作','总结智能体'],pipe:p=>`共 ${p.lines} 句解说：${p.agent_lines} 句由解说智能体生成（其中 ${p.retried_lines} 句被退回后重写），${p.fallback_lines} 句改用模板。模型 ${p.model}，通过 ${p.framework} 运行。离线生成耗时 ${p.seconds} 秒；网页回放结果，不实时调用模型。`,how:'事件按时间顺序进入。分析步骤计算传球难度、球速与射门速度、预期进球和控球率，再挑出值得讲的时刻。解说智能体按观众类型和语言写一句话。事实核查会退回数据里没有的名字、数字或动作，审核智能体再核对射门者、夺球者、领先方和发生区域。',kinds:{pass:'传球',shot:'射门',interception:'断球',tackle:'抢断',pressure:'逼抢',kickoff:'开球',goal_kick:'球门球',keeper_restart:'门将发球'}}};
+</div>
+
+<footer class="site"><div class="wrap"><span id="foot-src"></span><span><a href="./about.html" data-i18n="navabout">How it works</a> · <a href="https://github.com/Wichai-pan/inside-the-game" data-i18n="code">Source code</a></span></div></footer>
+
+<script>
+const T={en:{},zh:{navlive:'比赛中心',navstudio:'演播室',navabout:'工作原理',eyebrow:'AI 比赛中心 · Microsoft Agent Framework',title1:'同一场比赛，',title2:'每位球迷各有一版。',lead:'智能体观看比赛数据流，挑出关键时刻并为你讲解：可以是通俗说法，也可以是数据视角；可以是英文，也可以是中文。每一句在播出前都与数据核对过。',b1:'模拟比赛',b3:'逐句事实核查',b4:'2 类观众 × 2 种语言',tryh:'30 秒上手',s1b:'按下播放。',s1:'解说员开口时字幕同步出现。',s2b:'切换到数据分析。',s2:'同一场比赛，更密的解说和数据依据。',s3b:'选一名球员或切换 English。',s3:'点球场上任意一个圆点即可关注该球员。',match:'比赛',viewer:'观众',casual:'新观众',analyst:'数据分析',language:'语言',follow:'关注',playerl:'关注球员',studio:'赛后演播室 →',replay:'回放',possession:'控球率',next:'下一次参与 ›',live:'实时解说',whyh:'为什么重要',evidence:'数据依据',mstats:'比赛数据',live2:'随每个事件更新',moments:'关键时刻',recap:'自动赛后总结',recapnote:'最后一个事件之后生成',transcript:'解说记录',ticker:'事件流与派生指标',how:'工作原理',more:'了解更多 →',pipe:'智能体工作流',raw:'查看画面叠加 JSON ↗',code:'源代码'}};
+const U={en:{realBadge:'Real match data',pbpVoice:'Play-by-play',analystVoice:'Analyst',generating:w=>`The analyst agent is writing this line… ready in ${w.toFixed(1)} s on this laptop.`,dropped:'Dropped: play had moved on before it could be said',delay:(d,w)=>`Ready ${d.toFixed(1)} s after the moment${w>0.5?`, said ${w.toFixed(1)} s later when the speaker was free`:''}`,trNote:(p,n)=>`Speaking ${p}% of the time · ${n} analysis line${n===1?'':'s'} dropped`,latency:'Live delay on this laptop',latMed:'Median per line',latFirst:'Passed first time',latAll:'4 viewers at once',nobody:'No player',noTouch:'No involvement yet.',roleLine:(n,r)=>`${n} in this moment: ${r.join(', ')}`,r:{shooter:'shot',scorer:'scored',pass:'passed',receiver:'received the ball',interception:'intercepted',tackle:'won a tackle',tackled:'was tackled',pressure:'pressed',pressed:'was pressed',lost:'lost the ball',saved:'made the save',blocked:'blocked the shot',kickoff:'kicked off',goal_kick:'took the goal kick',keeper_restart:'restarted play'},roles:{AM:'Attacking mid',SUB:'Substitute',GK:'Goalkeeper',RB:'Right back',CB:'Centre back',LB:'Left back',CM:'Midfielder',DM:'Defensive mid',RW:'Right wing',ST:'Striker',LW:'Left wing'},ps:{touches:'Touches',passes:'Passes',diff:'Avg pass difficulty',shots:'Shots (goals)',xg:'xG',wins:'Ball wins / presses',dist:'Distance',top:'Top speed',saves:'Saves'},sprinting:v=>`Sprinting ${v} km/h`,milestone:m=>`${m} m covered`,sprints:n=>`${n} sprint${n>1?'s':''}`,goals:n=>`${n} goal${n>1?'s':''}`,all:'Both teams',waiting:'Waiting for the next key moment',quiet:'Routine play. The commentator stays quiet until something matters.',start:'Press play. Commentary appears only when a moment matters.',agent:'Agent-written',fallback:'Template fallback',retry:n=>`passed fact check on retry ${n}`,first:'passed fact check first time',events:n=>`${n} events`,moments:n=>`${n} moments`,recapWait:'The recap appears when the clip ends. Skip to the end to read it.',casualNote:'Plain language, fewer numbers',analystNote:'Metrics, reasons and evidence',matchName:s=>`Match ${s}`,flow:['Match feed','Analyst','Narrator agent','Fact checker','Claim auditor agent','Producer','Recap agent'],pipe:p=>`${p.lines} commentary lines: ${p.agent_lines} written by the narrator agent (${p.retried_lines} were rewritten after a checker rejected them), ${p.fallback_lines} replaced by a template. Model: ${p.model}, run through ${p.framework}. Build time ${p.seconds}s, offline; the page replays the result without calling a model.`,how:'Events arrive in time order. An analyst computes pass difficulty, ball and shot speed, xG and possession, then picks moments worth talking about. A narrator agent writes a line for your viewer type and language. A fact checker rejects any name, number or action not in the data, and an auditor agent checks who shot, who won the ball, who leads and where.',kinds:{pass:'pass',shot:'shot',interception:'interception',tackle:'tackle',pressure:'pressure',kickoff:'kick-off',goal_kick:'goal kick',keeper_restart:'keeper restart'},mk:{goal:'Goal',shot:'Shot',long_spell:'Spell',pressure_win:'Ball won',difficult_pass:'Key pass'},hint:'Watch the match with live AI commentary',st:{pos:'Possession',shots:'Shots',ot:'On target',xg:'xG',pass:'Pass completion',reg:'Ball wins'},met:{length_m:['Pass length','m'],ball_speed_kmh:['Ball speed','km/h'],progress_m:['Progress','m'],receiver_space_m:['Receiver space','m'],difficulty:['Difficulty','/100'],distance_m:['Shot distance','m'],shot_speed_kmh:['Shot speed','km/h'],xg:['xG',''],metres_from_goal:['From own goal','m']},flags:{into_final_third:'Into final third',under_pressure:'Under pressure',in_attacking_half:'In attacking half'}},
+zh:{realBadge:'真实比赛数据',pbpVoice:'逐球解说',analystVoice:'分析',generating:w=>`分析智能体正在写这一句……在这台电脑上还需 ${w.toFixed(1)} 秒。`,dropped:'已放弃：等到能说时比赛已经往下走了',delay:(d,w)=>`关键时刻后 ${d.toFixed(1)} 秒生成${w>0.5?`，等解说空档又过了 ${w.toFixed(1)} 秒才说`:''}`,trNote:(p,n)=>`解说时间占 ${p}% · 放弃 ${n} 句分析`,latency:'这台电脑上的实时延迟',latMed:'每句中位数',latFirst:'一次通过的',latAll:'同时服务 4 种观众',nobody:'不关注',noTouch:'暂未参与。',roleLine:(n,r)=>`${n} 在这一刻：${r.join('，')}`,r:{shooter:'射门',scorer:'进球',pass:'传球',receiver:'接球',interception:'断球',tackle:'抢断成功',tackled:'被抢断',pressure:'逼抢',pressed:'被逼抢',lost:'丢球',saved:'扑救',blocked:'封堵射门',kickoff:'开球',goal_kick:'发球门球',keeper_restart:'门将发球'},roles:{AM:'前腰',SUB:'替补',GK:'门将',RB:'右后卫',CB:'中后卫',LB:'左后卫',CM:'中场',DM:'后腰',RW:'右边锋',ST:'中锋',LW:'左边锋'},ps:{touches:'触球',passes:'传球',diff:'平均传球难度',shots:'射门（进球）',xg:'预期进球',wins:'夺回球权 / 逼抢',dist:'跑动距离',top:'最高速度',saves:'扑救'},sprinting:v=>`冲刺中 ${v} 公里/小时`,milestone:m=>`已跑 ${m} 米`,sprints:n=>`冲刺 ${n} 次`,goals:n=>`进球 ${n} 个`,all:'两队',waiting:'等待下一个关键时刻',quiet:'普通推进阶段，解说暂时留白。',start:'按播放键开始。只有关键时刻才会出现解说。',agent:'智能体生成',fallback:'模板保底',retry:n=>`第 ${n} 次生成通过核查`,first:'首次生成即通过核查',events:n=>`${n} 个事件`,moments:n=>`${n} 个时刻`,recapWait:'片段结束后显示总结，可拖到末尾查看。',casualNote:'通俗说法，少用数字',analystNote:'指标、原因与依据',matchName:s=>`比赛 ${s}`,flow:['比赛数据流','分析','解说智能体','事实核查','声明审核智能体','制作','总结智能体'],pipe:p=>`共 ${p.lines} 句解说：${p.agent_lines} 句由解说智能体生成（其中 ${p.retried_lines} 句被退回后重写），${p.fallback_lines} 句改用模板。模型 ${p.model}，通过 ${p.framework} 运行。离线生成耗时 ${p.seconds} 秒；网页回放结果，不实时调用模型。`,how:'事件按时间顺序进入。分析步骤计算传球难度、球速与射门速度、预期进球和控球率，再挑出值得讲的时刻。解说智能体按观众类型和语言写一句话。事实核查会退回数据里没有的名字、数字或动作，审核智能体再核对射门者、夺球者、领先方和发生区域。',kinds:{pass:'传球',shot:'射门',interception:'断球',tackle:'抢断',pressure:'逼抢',kickoff:'开球',goal_kick:'球门球',keeper_restart:'门将发球'},mk:{goal:'进球',shot:'射门',long_spell:'连续控球',pressure_win:'夺回球权',difficult_pass:'关键传球'},hint:'观看比赛，AI 实时解说',st:{pos:'控球率',shots:'射门',ot:'射正',xg:'预期进球',pass:'传球成功率',reg:'夺回球权'},met:{length_m:['传球距离','米'],ball_speed_kmh:['球速','公里/时'],progress_m:['推进','米'],receiver_space_m:['接球空间','米'],difficulty:['难度','/100'],distance_m:['射门距离','米'],shot_speed_kmh:['射门球速','公里/时'],xg:['预期进球',''],metres_from_goal:['距本方球门','米']},flags:{into_final_third:'进入前场三分之一',under_pressure:'受到逼抢',in_attacking_half:'在进攻半场'}}};
 const $=s=>document.querySelector(s),NS='http://www.w3.org/2000/svg';
-let db,t=0,playing=false,profile='casual',lang='en',follow='',player='',track=null,speed=1,last=0,seeds=[];
+let db,t=0,playing=false,profile='casual',lang='en',follow='',player='',track=null,speed=1,last=0,seeds=[],dots=[],started=false;
+const tried={play:false,view:false,more:false};
 const el=(tag,attr={})=>{const x=document.createElementNS(NS,tag);for(const[k,v]of Object.entries(attr))x.setAttribute(k,v);return x};
+const h=(tag,cls,txt)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(txt!=null)x.textContent=txt;return x};
 const fmt=n=>`${Math.floor(n/60)}:${String(Math.floor(n%60)).padStart(2,'0')}`;
 const clk=n=>fmt(n+(db?.t0||0));/* match clock */
 const caps=()=>db.captions?.[profile]?.[lang];
 const u=()=>U[lang];
+const ink=hex=>{const n=parseInt(hex.slice(1),16),r=n>>16,g=n>>8&255,b=n&255;return(0.299*r+0.587*g+0.114*b)>150?'#0b1015':'#ffffff'};
+const PLAY='<svg viewBox="0 0 24 24"><path d="M6 3l15 9-15 9z" fill="currentColor"/></svg>',PAUSE='<svg viewBox="0 0 24 24"><path d="M6 3h4v18H6zM14 3h4v18h-4z" fill="currentColor"/></svg>';
 function li(list,items,fn){list.replaceChildren();for(const it of items){const x=document.createElement('li');fn?fn(x,it):x.textContent=it;list.append(x)}}
 function i18n(){document.documentElement.lang=lang==='zh'?'zh-CN':'en';for(const n of document.querySelectorAll('[data-i18n]')){const k=n.dataset.i18n;if(!T.en[k])T.en[k]=n.textContent;n.textContent=(T[lang][k])||T.en[k]}}
 function fi(){return Math.min(db.frames.length-1,Math.max(0,Math.round(t*db.hz)))}
 function frame(){return db.frames[fi()]}
+/* positions between two 5 Hz frames, so dots and ball glide instead of stepping */
+function smooth(){const F=db.frames,ft=Math.max(0,t*db.hz),j0=Math.min(F.length-1,Math.floor(ft)),j1=Math.min(F.length-1,j0+1),a=ft-j0,A=F[j0],B=F[j1];const lerp=(p,q)=>Math.hypot(q[0]-p[0],q[1]-p[1])>6?p:[p[0]+(q[0]-p[0])*a,p[1]+(q[1]-p[1])*a];return{players:A.players.map((p,i)=>lerp(p,B.players[i])),ball:lerp(A.ball,B.ball)}}
 const SPRINT=7,SPRINT_HOLD=1.5;/* a sprint: above 7 m/s (about 25 km/h) for at least 1.5 s */
 const idx=id=>db.players.findIndex(p=>p.id===id);
+const teamOf=id=>db.teams.find(x=>x.id===id);
 function buildTrack(id){const k=idx(id),F=db.frames,hz=db.hz,dist=[0],speed=[];for(let j=1;j<F.length;j++){const a=F[j-1].players[k],b=F[j].players[k];dist.push(dist[j-1]+Math.hypot(b[0]-a[0],b[1]-a[1]))}for(let j=0;j<F.length;j++){const a=F[Math.max(0,j-hz)].players[k],b=F[j].players[k];speed.push(Math.hypot(b[0]-a[0],b[1]-a[1])*hz/Math.min(hz,Math.max(1,j)))}const top=[0],sprints=[0],run=[0];for(let j=1;j<F.length;j++){top.push(Math.max(top[j-1],speed[j]));run.push(speed[j]>=SPRINT?run[j-1]+1/hz:0);sprints.push(sprints[j-1]+(run[j]>=SPRINT_HOLD&&run[j-1]<SPRINT_HOLD?1:0))}return{dist,speed,top,sprints,run}}
 function roles(m,id){const L=u(),out=[];for(const f of m.facts){const e=db.events.find(x=>x.id===f.event_id);if(!e)continue;let r=null;if(e.actor===id)r=e.kind==='shot'?(e.outcome==='goal'?L.r.scorer:L.r.shooter):L.r[e.kind];else if(e.target===id)r={pass:L.r.receiver,tackle:L.r.tackled,pressure:L.r.pressed,interception:L.r.lost}[e.kind];else if(e.keeper===id)r=L.r.saved;else if(e.blocker===id)r=L.r.blocked;if(r&&!out.includes(r))out.push(r)}return out}
 const involved=(m,id)=>m.facts.some(f=>{const e=db.events.find(x=>x.id===f.event_id);return e&&[e.actor,e.target,e.keeper,e.blocker].includes(id)});
 function stateAt(){let s=null;for(const e of db.events){if(e.t>t||(e.kind==='shot'&&t<e.end_t))break;s=e.state}return s}
 function currentMoment(){return[...db.moments].reverse().find(m=>m.t<=t&&t-m.t<8+(db.captions?(line(m).seconds||0):0))}
 function line(m){return m.commentary[profile][lang]}
-function drawPitch(m){const g=$('#dots'),f=frame();g.replaceChildren();const key=m&&db.events.find(e=>e.id===m.key_event);const focus=new Set(key?['actor','target','keeper','blocker'].map(k=>key[k]).filter(Boolean):[]);
- const recent=db.events.filter(e=>e.t<=t&&e.t>t-4&&e.end_x!=null).slice(-1)[0];if(recent){g.append(el('line',{x1:recent.x,y1:recent.y,x2:recent.end_x,y2:recent.end_y,class:'trail'}))}
- if(player){const k=idx(player),pts=[];for(let j=Math.max(0,fi()-5*db.hz);j<=fi();j++)pts.push(db.frames[j].players[k].join(','));g.append(el('polyline',{points:pts.join(' '),class:'ptrail'}))}
- db.players.forEach((p,i)=>{const[x,y]=f.players[i];const team=db.teams.find(q=>q.id===p.team);const cls=['player'];if(focus.has(p.id))cls.push('focus');if(p.id===player)cls.push('me');if(follow&&p.team!==follow)cls.push('dim');const c=el('circle',{cx:x,cy:y,r:1.75,fill:team.color,class:cls.join(' ')});const tip=el('title');tip.textContent=`${p.name} · ${team.name} · ${p.role}`;c.append(tip);g.append(c);const n=el('text',{x,y:y+.1,class:'lbl'});n.textContent=p.number;g.append(n);if(focus.has(p.id)||p.id===player){const tg=el('text',{x,y:y-3,class:'tag'+(p.id===player?' me':'')});const v=p.id===player&&track.run[fi()]>=SPRINT_HOLD?track.speed[fi()]:0;tg.textContent=p.name.split(' ').slice(-1)[0]+(v?` · ${Math.round(v*3.6)} km/h`:'');g.append(tg)}});
- g.append(el('circle',{cx:f.ball[0],cy:f.ball[1],r:1.05,class:'ball'}))}
-function drawStats(){const s=stateAt()||{a:{goals:0,possession_pct:50,shots:0,on_target:0,xg:0,pass_pct:null},b:{goals:0,possession_pct:50,shots:0,on_target:0,xg:0,pass_pct:null}};
- $('#score').textContent=`${s.a.goals} – ${s.b.goals}`;$('#s-pos').textContent=`${s.a.possession_pct}% – ${s.b.possession_pct}%`;$('#s-shots').textContent=`${s.a.shots} (${s.a.on_target}) – ${s.b.shots} (${s.b.on_target})`;$('#s-xg').textContent=`${s.a.xg.toFixed(2)} – ${s.b.xg.toFixed(2)}`;$('#s-pass').textContent=`${s.a.pass_pct??'–'}% – ${s.b.pass_pct??'–'}%`;
- $('#pa').style.cssText=`width:${s.a.possession_pct}%;background:${db.teams[0].color}`;$('#pb').style.cssText=`width:${s.b.possession_pct}%;background:${db.teams[1].color}`;$('#pat').textContent=`${db.teams[0].name} ${s.a.possession_pct}%`;$('#pbt').textContent=`${s.b.possession_pct}% ${db.teams[1].name}`}
+function setupPitch(){const g=$('#dots');g.replaceChildren();dots=db.players.map(p=>{const team=teamOf(p.team),grp=el('g',{class:'pl'}),tip=el('title');tip.textContent=`${p.name} · ${team.name} · ${p.role}`;
+  const num=el('text',{class:'pl-num',y:.08,fill:ink(team.color)});num.textContent=p.number;const tag=el('text',{class:'pl-tag',y:-2.9});
+  grp.append(tip,el('circle',{class:'pl-halo',r:2.55}),el('circle',{class:'pl-body',r:1.65,fill:team.color}),num,tag);grp.onclick=()=>setPlayer(p.id===player?'':p.id);g.append(grp);return{grp,tag,p}})}
+function drawPitch(m){const f=smooth(),tr=$('#trails');tr.replaceChildren();const key=m&&db.events.find(e=>e.id===m.key_event);const focus=new Set(key?['actor','target','keeper','blocker'].map(k=>key[k]).filter(Boolean):[]);
+ const recent=db.events.filter(e=>e.t<=t&&e.t>t-4&&e.end_x!=null).slice(-1)[0];if(recent)tr.append(el('line',{x1:recent.x,y1:recent.y,x2:recent.end_x,y2:recent.end_y,class:'trail'}));
+ if(player){const k=idx(player);let pts=[],prev=null;const flush=()=>{if(pts.length>1)tr.append(el('polyline',{points:pts.join(' '),class:'ptrail'}));pts=[]};for(let j=Math.max(0,fi()-5*db.hz);j<=fi();j++){const q=db.frames[j].players[k];if(prev&&Math.hypot(q[0]-prev[0],q[1]-prev[1])>6)flush();pts.push(q.join(','));prev=q}flush()}/* break the trail where stitched clips jump */
+ dots.forEach(({grp,tag,p},i)=>{const[x,y]=f.players[i];grp.setAttribute('transform',`translate(${x.toFixed(2)},${y.toFixed(2)})`);const cls=['pl'];if(focus.has(p.id))cls.push('focus');if(p.id===player)cls.push('me');if(follow&&p.team!==follow)cls.push('dim');grp.setAttribute('class',cls.join(' '));
+  if(focus.has(p.id)||p.id===player){const v=p.id===player&&track.run[fi()]>=SPRINT_HOLD?track.speed[fi()]:0;tag.textContent=p.name.split(' ').slice(-1)[0]+(v?` · ${Math.round(v*3.6)} km/h`:'');tag.setAttribute('class','pl-tag'+(p.id===player?' me':''))}else if(tag.textContent)tag.textContent=''});
+ const[bx,by]=f.ball;$('#ball').setAttribute('cx',bx);$('#ball').setAttribute('cy',by);$('#ball-sh').setAttribute('cx',bx+.35);$('#ball-sh').setAttribute('cy',by+.55)}
+const EMPTY={goals:0,possession_pct:50,shots:0,on_target:0,xg:0,pass_pct:null,regains:0};
+function drawStats(){const s=stateAt()||{a:EMPTY,b:EMPTY},L=u(),A=db.teams[0],B=db.teams[1];
+ $('#score').textContent=`${s.a.goals} – ${s.b.goals}`;
+ $('#pa').style.cssText=`width:${s.a.possession_pct}%;background:${A.color}`;$('#pb').style.cssText=`width:${s.b.possession_pct}%;background:${B.color}`;$('#pat-n').textContent=`${s.a.possession_pct}%`;$('#pbt-n').textContent=`${s.b.possession_pct}%`;
+ if(profile!=='analyst')return;
+ const rows=[[L.st.pos,s.a.possession_pct,s.b.possession_pct,v=>v+'%'],[L.st.shots,s.a.shots,s.b.shots],[L.st.ot,s.a.on_target,s.b.on_target],[L.st.xg,s.a.xg,s.b.xg,v=>v.toFixed(2)],[L.st.pass,s.a.pass_pct,s.b.pass_pct,v=>v==null?'–':v+'%'],[L.st.reg,s.a.regains||0,s.b.regains||0]];
+ const box=$('#stats');box.replaceChildren();for(const[k,a,b,f=(v=>v)]of rows){const max=Math.max(a||0,b||0,1e-9),la=h('div','bar left'),lb=h('div'),ra=h('div','bar'),rb=h('div');lb.style.cssText=`width:${100*(a||0)/max}%;background:${A.color}`;rb.style.cssText=`width:${100*(b||0)/max}%;background:${B.color}`;la.append(lb);ra.append(rb);box.append(h('div','v r',f(a)),la,h('div','l',k),ra,h('div','v',f(b)))}}
 function drawNow(m){const L=u();$('#viewer-note').textContent=profile==='casual'?L.casualNote:L.analystNote;
  $('#role').textContent=m&&player&&involved(m,player)?L.roleLine(db.players[idx(player)].name,roles(m,player)):'';
- if(m){const c=line(m),wait=db.captions?m.t+(c.seconds||0)-t:0;$('#moment-title').textContent=`${m.clock} · ${m.headline[lang]}`;$('#now-text').textContent=wait>0?L.generating(wait):c.text;$('#source').innerHTML='';const em=document.createElement('em');em.textContent=c.source.startsWith('agent')?L.agent:L.fallback;$('#source').append(em,document.createTextNode(c.source.startsWith('agent')?(c.attempts>1?L.retry(c.attempts):L.first):''));
-  li($('#why'),m.why.map(w=>w[lang]));li($('#facts'),m.facts,(x,f)=>{x.textContent=f[lang]+' ';const k=document.createElement('code');k.textContent=f.event_id;x.append(k)});
+ const key=m?.id||'',stamp=key+profile+lang+(m&&db.captions&&m.t+(line(m).seconds||0)>t?'w'+Math.ceil((m.t+(line(m).seconds||0)-t)*10):'');
+ if(m){const c=line(m),wait=db.captions?m.t+(c.seconds||0)-t:0;const mt=$('#moment-title');mt.replaceChildren(h('span','clk',m.clock),h('span',null,m.headline[lang]));$('#now-text').textContent=wait>0?L.generating(wait):c.text;
+  if($('#source').dataset.k!==stamp){$('#source').dataset.k=stamp;const agent=c.source.startsWith('agent');$('#source').replaceChildren(h('em',agent?'ok':'',agent?'✓ '+L.agent:L.fallback),document.createTextNode(agent?(c.attempts>1?L.retry(c.attempts):L.first):''));
+  li($('#why'),m.why.map(w=>w[lang]));li($('#facts'),m.facts,(x,f)=>{x.textContent=f[lang];x.append(h('code',null,f.event_id))});
+  const mx=$('#metrics');mx.replaceChildren();for(const[k,v]of Object.entries(m.metrics||{})){if(typeof v==='boolean'){if(v&&L.flags[k])mx.append(h('span','flag',L.flags[k]));continue}const d=L.met[k];if(!d)continue;const s=h('span',null,d[0]);s.append(h('b',null,(k==='xg'?v.toFixed(2):v)+(d[1]?' '+d[1]:'')));mx.append(s)}}
   $('#lower-head').textContent=m.headline[lang];$('#lower-text').textContent=c.text;$('#lower').classList.toggle('show',!db.captions)}
- else{$('#moment-title').textContent=L.waiting;$('#now-text').textContent=t<1?L.start:L.quiet;$('#source').textContent='';li($('#why'),[]);li($('#facts'),[]);$('#lower').classList.remove('show')}
+ else{$('#source').dataset.k='';$('#moment-title').textContent=L.waiting;$('#now-text').textContent=t<1?L.start:L.quiet;$('#source').textContent='';li($('#why'),[]);li($('#facts'),[]);$('#metrics').replaceChildren();$('#lower').classList.remove('show')}
  for(const b of $('#feed').children)b.classList.toggle('active',b.dataset.id===m?.id)}
-function drawTicker(){const box=$('#ticker'),L=u(),names=Object.fromEntries(db.players.map(p=>[p.id,p.name]));const shown=db.events.filter(e=>e.t<=t);if(box.childElementCount===shown.length&&box.dataset.lang===lang)return;box.dataset.lang=lang;box.replaceChildren();for(const e of shown.slice().reverse()){const d=document.createElement('div');const tm=document.createElement('time');tm.textContent=fmt(e.t);const s=document.createElement('span');s.textContent=e.fact[lang];d.append(tm,s);box.append(d)}$('#ev-count').textContent=L.events(shown.length)}
-function drawRecap(){const L=u(),r=db.recap[profile][lang];if(t>=db.duration-0.5){$('#recap').textContent=r.text;$('#recap-src').textContent=r.source.startsWith('agent')?`${L.agent} · ${db.pipeline.model}`:L.fallback}else{$('#recap').textContent=L.recapWait;$('#recap-src').textContent=''}}
-function draw(){t=Math.min(db.duration,Math.max(0,t));const m=currentMoment();$('#clock').textContent=clk(t);$('#seek').value=t;$('#play').textContent=playing?'❚❚':'▶';drawPitch(m);drawStats();drawNow(m);drawPlayer();drawTicker();drawRecap();drawSubs()}
+function drawTicker(){if(profile!=='analyst')return;const box=$('#ticker'),L=u();const shown=db.events.filter(e=>e.t<=t);if(box.childElementCount===shown.length&&box.dataset.lang===lang)return;box.dataset.lang=lang;box.replaceChildren(...shown.slice().reverse().map(e=>{const d=h('div');d.append(h('time',null,fmt(e.t)),h('span',null,e.fact[lang]));return d}));$('#ev-count').textContent=L.events(shown.length)}
+function drawRecap(){const L=u(),r=db.recap[profile][lang],done=t>=db.duration-0.5;$('#recap-box').classList.toggle('wait',!done);if(done){$('#recap').textContent=r.text;$('#recap-src').textContent=r.source.startsWith('agent')?`${L.agent} · ${db.pipeline.model}`:L.fallback}else{$('#recap').textContent=L.recapWait;$('#recap-src').textContent=''}}
+function draw(){t=Math.min(db.duration,Math.max(0,t));const m=currentMoment();$('#clock').textContent=clk(t);$('#time').textContent=`${clk(t)} / ${clk(db.duration)}`;$('#seek').value=t;$('#tl-fill').style.width=`${100*t/db.duration}%`;
+ const pi=playing?PAUSE:PLAY;if($('#play').dataset.s!==String(playing)){$('#play').dataset.s=playing;$('#play').innerHTML=pi;$('#play').setAttribute('aria-label',playing?'Pause':'Play')}
+ $('#bigplay').hidden=started||playing||t>0;drawPitch(m);drawStats();drawNow(m);drawPlayer();drawTicker();drawRecap();drawSubs()}
 function drawSubs(){const on=!!db.captions;$('#subs').hidden=true;$('#transcript-card').hidden=!on;if(!on)return;const L=u(),track=caps();
  const cur=track.find(c=>!c.dropped&&c.t<=t&&t<c.end);if(cur){$('#subs').hidden=false;$('#subs').className='subs'+(cur.voice==='analysis'?' analysis':'');$('#subs-voice').textContent=cur.voice==='analysis'?L.analystVoice:L.pbpVoice;$('#subs-text').textContent=cur.text}
  const said=track.filter(c=>c.t<=t),box=$('#transcript');if(box.dataset.n===String(said.length)&&box.dataset.k===profile+lang)return;box.dataset.n=said.length;box.dataset.k=profile+lang;
- box.replaceChildren(...said.slice().reverse().map(c=>{const d=document.createElement('div'),tm=document.createElement('time'),sp=document.createElement('span');tm.textContent=clk(c.t);sp.textContent=c.text;if(c.voice==='analysis'){d.className=c.dropped?'an drop':'an';const sm=document.createElement('small');sm.textContent=c.dropped?L.dropped:L.delay(c.delay,c.t-c.ready);sp.append(sm)}d.append(tm,sp);return d}));
+ box.replaceChildren(...said.slice().reverse().map(c=>{const d=h('div'),sp=h('span',null,c.text);if(c.voice==='analysis'){d.className=c.dropped?'an drop':'an';sp.append(h('small',null,c.dropped?L.dropped:L.delay(c.delay,c.t-c.ready)))}d.append(h('time',null,clk(c.t)),sp);return d}));
  const n=track.filter(c=>c.voice==='analysis'),said2=track.filter(c=>!c.dropped);$('#tr-note').textContent=L.trNote(Math.round(100*said2.reduce((a,c)=>a+c.end-c.t,0)/db.duration),n.filter(c=>c.dropped).length)}
-function drawPlayer(){const card=$('#pcard');card.hidden=!player;if(!player)return;const L=u(),p=db.players[idx(player)],team=db.teams.find(x=>x.id===p.team),j=fi();
- $('#pc-dot').style.background=team.color;$('#pc-name').textContent=`#${p.number} ${p.name}`;$('#pc-meta').textContent=`${team.name} · ${L.roles[p.role]||p.role}`;
+function drawPlayer(){const card=$('#pcard');card.hidden=!player;if(!player)return;const L=u(),p=db.players[idx(player)],team=teamOf(p.team),j=fi();
+ const av=$('#pc-dot');av.style.background=team.color;av.style.color=ink(team.color);av.textContent=p.number;$('#pc-name').textContent=p.name;$('#pc-meta').textContent=`${team.name} · ${L.roles[p.role]||p.role}`;
  const mine=db.events.filter(e=>(e.t<=t)&&!(e.kind==='shot'&&t<e.end_t)&&[e.actor,e.target,e.keeper,e.blocker].includes(player));
  const own=mine.filter(e=>e.actor===player),passes=own.filter(e=>e.kind==='pass'),done=passes.filter(e=>e.outcome==='complete'),shots=own.filter(e=>e.kind==='shot');
  const touches=own.filter(e=>e.kind!=='pressure').length+mine.filter(e=>e.target===player&&e.kind==='pass'&&e.outcome==='complete').length;
@@ -126,24 +426,35 @@ function drawPlayer(){const card=$('#pcard');card.hidden=!player;if(!player)retu
  const cells=profile==='casual'?[[L.ps.touches,touches],[L.ps.passes,`${done.length}/${passes.length}`],[L.ps.shots,`${shots.length} (${goals})`],[L.ps.dist,`${Math.round(track.dist[j])} m`]]
   :[[L.ps.touches,touches],[L.ps.passes,`${done.length}/${passes.length}`],[L.ps.diff,diff??'–'],[L.ps.shots,`${shots.length} (${goals})`],[L.ps.xg,xg.toFixed(2)],[L.ps.wins,`${wins} / ${press}`],[L.ps.dist,`${Math.round(track.dist[j])} m`],[L.ps.top,`${Math.round(track.top[j]*3.6)} km/h`]];
  if(saves)cells.splice(3,0,[L.ps.saves,saves]);
- $('#pc-stats').replaceChildren(...cells.map(([k,v])=>{const d=document.createElement('div'),s=document.createElement('small'),b=document.createElement('b');s.textContent=k;b.textContent=v;d.append(s,b);return d}));
+ $('#pc-stats').replaceChildren(...cells.map(([k,v])=>{const d=h('div');d.append(h('small',null,k),h('b','num',v));return d}));
  const badges=[];if(track.run[j]>=SPRINT_HOLD)badges.push([L.sprinting(Math.round(track.speed[j]*3.6)),true]);const hundreds=Math.floor(track.dist[j]/100)*100;if(hundreds>0&&track.dist[j]-hundreds<25)badges.push([L.milestone(hundreds),false]);if(track.sprints[j])badges.push([L.sprints(track.sprints[j]),false]);if(goals)badges.push([L.goals(goals),true]);
- $('#pc-badges').replaceChildren(...badges.map(([x,hot])=>{const s=document.createElement('span');s.textContent=x;if(hot)s.className='hot';return s}));
- const fd=$('#pc-feed');if(fd.dataset.n!==String(mine.length)||fd.dataset.lang!==lang){fd.dataset.n=mine.length;fd.dataset.lang=lang;fd.replaceChildren(...(mine.length?mine.slice().reverse().map(e=>{const d=document.createElement('div'),tm=document.createElement('time'),s=document.createElement('span');tm.textContent=fmt(e.t);s.textContent=e.fact[lang];d.append(tm,s);return d}):[Object.assign(document.createElement('div'),{textContent:L.noTouch})]))}}
-function feed(){const box=$('#feed'),L=u();box.replaceChildren();for(const m of db.moments){const b=document.createElement('button');b.className='item'+((follow&&m.team!==follow)||(player&&!involved(m,player))?' dim':'');b.dataset.id=m.id;const tm=document.createElement('time');tm.textContent=m.clock;const body=document.createElement('span');const bold=document.createElement('b');bold.textContent=line(m).text;const sm=document.createElement('small');sm.textContent=`${m.headline[lang]} · ${db.teams.find(x=>x.id===m.team).name} · ${line(m).source.startsWith('agent')?L.agent:L.fallback}`;body.append(bold,sm);b.append(tm,body);b.onclick=()=>{playing=false;t=m.t+0.05;draw()};box.append(b)}$('#count').textContent=L.moments(db.moments.length)}
-function pipeline(){const L=u(),flow=document.createElement('div');flow.className='flow';L.flow.forEach((s,i)=>{if(i){const a=document.createElement('i');a.textContent='→';flow.append(a)}const x=document.createElement('span');x.textContent=s;if(i===2||i===4||i===6)x.className='llm';flow.append(x)});const p=document.createElement('p');p.textContent=L.pipe(db.pipeline);$('#pipeline').replaceChildren(flow,p);
- if(db.latency){const h=document.createElement('p');h.style.marginTop='12px';h.textContent=L.latency;const g=document.createElement('div');g.className='lat';for(const[k,v]of[[L.latMed,`${db.latency.per_line_seconds.median} s`],[L.latFirst,`${db.latency.first_try_median} s`],[L.latAll,db.latency.four_variants_at_once.map(x=>x+' s').join(' / ')]]){const d=document.createElement('div'),sm=document.createElement('small'),bb=document.createElement('b');sm.textContent=k;bb.textContent=v;d.append(sm,bb);g.append(d)}$('#pipeline').append(h,g)}const f2=flow.cloneNode(true),p2=document.createElement('p');p2.textContent=L.how;$('#pipeline-casual').replaceChildren(f2,p2)}
-function chrome(){i18n();const L=u();$('#seed').replaceChildren(...seeds.map(s=>{const o=document.createElement('option');o.value=s.key;o.textContent=s.label||L.matchName(s.seed);return o}));$('#seed').value=db?db.key:seeds[0].key;
- if(db){const real=!db.synthetic;document.querySelector('[data-i18n=b1]').textContent=real?L.realBadge:(T[lang].b1||T.en.b1);document.querySelector('[data-i18n=foot]').textContent=real?L.realFoot(db.source):(T[lang].foot||T.en.foot)}
- if(db){$('#na').textContent=db.teams[0].name;$('#nb').textContent=db.teams[1].name;$('#ca').style.background=db.teams[0].color;$('#cb').style.background=db.teams[1].color;$('#follow').replaceChildren(...[['',L.all],...db.teams.map(x=>[x.id,x.name])].map(([v,n])=>{const o=document.createElement('option');o.value=v;o.textContent=n;return o}));$('#follow').value=follow;
-  const ps=$('#player');ps.replaceChildren(Object.assign(document.createElement('option'),{value:'',textContent:L.nobody}),...db.teams.map(tm=>{const og=document.createElement('optgroup');og.label=tm.name;for(const p of db.players.filter(x=>x.team===tm.id)){const o=document.createElement('option');o.value=p.id;o.textContent=`#${p.number} ${p.name} · ${L.roles[p.role]||p.role}`;og.append(o)}return og}));ps.value=player;$('#pc-feed').dataset.n='';$('#seek').max=db.duration;$('#json').href=seeds.find(x=>x.key===db.key).url;feed();pipeline();$('#ticker').replaceChildren();draw()}}
-async function load(key){playing=false;t=0;player='';track=null;const m=seeds.find(x=>x.key===key)||seeds[0];db=await(await fetch(m.url)).json();db.key=m.key;$('#studio-link').href=`./studio.html?match=${m.key.startsWith('dfl')?'dfl':m.key}`;chrome()}
+ $('#pc-badges').replaceChildren(...badges.map(([x,hot])=>h('span',hot?'hot':'',x)));
+ const fd=$('#pc-feed');if(fd.dataset.n!==String(mine.length)||fd.dataset.lang!==lang){fd.dataset.n=mine.length;fd.dataset.lang=lang;fd.replaceChildren(...(mine.length?mine.slice().reverse().map(e=>{const d=h('div');d.append(h('time',null,fmt(e.t)),h('span',null,e.fact[lang]));return d}):[h('div',null,L.noTouch)]))}}
+function jump(m){playing=false;started=true;t=m.t+0.05;draw()}
+function feed(){const box=$('#feed'),L=u();box.replaceChildren();for(const m of db.moments){const team=teamOf(m.team);const b=h('button','item'+(m.kind==='goal'?' goal':'')+((follow&&m.team!==follow)||(player&&!involved(m,player))?' dim':''));b.dataset.id=m.id;const st=h('span','stripe');st.style.background=team.color;const body=h('span');const sm=h('small');sm.append(h('span','k',L.mk[m.kind]||m.headline[lang]),document.createTextNode(`· ${m.headline[lang]} · ${team.short||team.name}`));body.append(h('b',null,line(m).text),sm);b.append(st,h('time',null,m.clock),body);b.onclick=()=>jump(m);box.append(b)}$('#count').textContent=L.moments(db.moments.length);
+ const mk=$('#marks');mk.replaceChildren(...db.moments.map(m=>{const b=h('button','mk'+(m.kind==='goal'?' goal':''));b.style.left=`${100*m.t/db.duration}%`;b.style.background=m.kind==='goal'?teamOf(m.team).color:'';b.title=`${m.clock} · ${m.headline[lang]}`;b.setAttribute('aria-label',b.title);b.onclick=()=>jump(m);return b}))}
+function flow(){const L=u(),f=h('div','flow');L.flow.forEach((s,i)=>{if(i)f.append(h('i',null,'→'));f.append(h('span',i===2||i===4||i===6?'llm':'',s))});return f}
+function pipeline(){const L=u();$('#pipeline').replaceChildren(flow(),h('p',null,L.pipe(db.pipeline)));
+ if(db.latency){const g=h('div','lat');for(const[k,v]of[[L.latMed,`${db.latency.per_line_seconds.median} s`],[L.latFirst,`${db.latency.first_try_median} s`],[L.latAll,db.latency.four_variants_at_once.map(x=>x+' s').join(' / ')]]){const d=h('div');d.append(h('small',null,k),h('b','num',v));g.append(d)}$('#pipeline').append(h('div','lat-h',L.latency),g)}
+ $('#pipeline-casual').replaceChildren(flow(),h('p',null,L.how))}
+function steps(){for(const[k,id]of[['play','#step-play'],['view','#step-view'],['more','#step-more']]){$(id).classList.toggle('done',tried[k]);$(id).querySelector('i').textContent=tried[k]?'✓':{play:1,view:2,more:3}[k]}}
+function chrome(){i18n();steps();const L=u();$('#seed').replaceChildren(...seeds.map(s=>{const o=document.createElement('option');o.value=s.key;o.textContent=s.label||L.matchName(s.seed);return o}));$('#seed').value=db?db.key:seeds[0].key;$('#bigplay-hint').textContent=L.hint;
+ if(!db)return;const real=!db.synthetic;$('[data-i18n=b1]').textContent=real?L.realBadge:(T[lang].b1||T.en.b1);$('#foot-src').textContent=db.source||'';
+ const[A,B]=db.teams;$('#na').textContent=A.short||A.name;$('#nb').textContent=B.short||B.name;$('#ca').style.background=A.color;$('#cb').style.background=B.color;$('#pat').textContent=A.name;$('#pbt').textContent=B.name;$('#kna').textContent=A.name;$('#knb').textContent=B.name;$('#ka').style.background=A.color;$('#kb').style.background=B.color;
+ $('#follow').replaceChildren(...[['',L.all],...db.teams.map(x=>[x.id,x.name])].map(([v,n])=>Object.assign(document.createElement('option'),{value:v,textContent:n})));$('#follow').value=follow;
+ const ps=$('#player');ps.replaceChildren(Object.assign(document.createElement('option'),{value:'',textContent:L.nobody}),...db.teams.map(tm=>{const og=document.createElement('optgroup');og.label=tm.name;for(const p of db.players.filter(x=>x.team===tm.id)){const o=document.createElement('option');o.value=p.id;o.textContent=`#${p.number} ${p.name} · ${L.roles[p.role]||p.role}`;og.append(o)}return og}));ps.value=player;
+ $('#pc-feed').dataset.n='';$('#seek').max=db.duration;$('#json').href=seeds.find(x=>x.key===db.key).url;$('#transcript').dataset.n='';$('#ticker').replaceChildren();feed();pipeline();draw()}
+async function load(key){playing=false;t=0;started=false;player='';track=null;const m=seeds.find(x=>x.key===key)||seeds[0];db=await(await fetch(m.url)).json();db.key=m.key;const sl=`./studio.html?match=${m.key.startsWith('dfl')?'dfl':m.key}`;$('#studio-link').href=sl;$('#nav-studio').href=sl;setupPitch();chrome()}
+function setPlayer(id){player=id;track=player?buildTrack(player):null;$('#player').value=id;$('#pc-feed').dataset.n='';if(id){tried.more=true;steps()}feed();draw()}
 function seg(id,fn){for(const b of $(id).children)b.onclick=()=>{$(id).querySelector('.active')?.classList.remove('active');b.classList.add('active');fn(b.dataset.v)}}
-seg('#profile',v=>{profile=v;document.body.className=v;chrome()});seg('#lang',v=>{lang=v;chrome()});seg('#speed',v=>{speed=+v});
+function togglePlay(){if(t>=db.duration)t=0;playing=!playing;started=true;if(playing){tried.play=true;steps()}draw()}
+seg('#profile',v=>{profile=v;document.body.className=v;if(v==='analyst')tried.view=true;chrome()});seg('#lang',v=>{lang=v;if(v==='zh')tried.more=true;chrome()});seg('#speed',v=>{speed=+v;$('#speed-chip').textContent=v+'×'});
 $('#follow').onchange=e=>{follow=e.target.value;feed();draw()};
-$('#player').onchange=e=>{player=e.target.value;track=player?buildTrack(player):null;$('#pc-feed').dataset.n='';feed();draw()};
-$('#pc-next').onclick=()=>{const m=db.moments.find(x=>x.t>t+0.2&&involved(x,player))||db.moments.find(x=>involved(x,player));if(m){playing=false;t=m.t+0.05;draw()}};$('#seed').onchange=e=>load(e.target.value);
-$('#play').onclick=()=>{if(t>=db.duration)t=0;playing=!playing;draw()};$('#seek').oninput=e=>{playing=false;t=+e.target.value;draw()};
+$('#player').onchange=e=>setPlayer(e.target.value);
+$('#pc-close').onclick=()=>setPlayer('');
+$('#pc-next').onclick=()=>{const m=db.moments.find(x=>x.t>t+0.2&&involved(x,player))||db.moments.find(x=>involved(x,player));if(m)jump(m)};$('#seed').onchange=e=>load(e.target.value);
+$('#play').onclick=togglePlay;$('#bigplay').onclick=togglePlay;$('#seek').oninput=e=>{playing=false;started=true;t=+e.target.value;draw()};
+document.addEventListener('keydown',e=>{if(e.code==='Space'&&db&&!/INPUT|SELECT|BUTTON|TEXTAREA/.test(e.target.tagName)){e.preventDefault();togglePlay()}});
 function tick(ms){if(playing&&last&&db){t+=(ms-last)/1000*speed;if(t>=db.duration){t=db.duration;playing=false}draw()}last=ms;requestAnimationFrame(tick)}
 (async()=>{try{let real=[];try{real=(await(await fetch('./real/index.json')).json()).matches.map(x=>({key:x.id,label:x.label,url:`./real/${x.id}.json`}))}catch(e){}
  const si=await(await fetch('./synthetic/index.json')).json();const remix=(si.matches||[]).map(x=>({key:x.id,label:x.label,url:`./synthetic/${x.id}.json`}));const syn=(si.seeds||[]).map(s=>({key:'s'+s,seed:s,url:`./synthetic/seed-${s}.json`}));seeds=[...remix,...real,...syn];await load(seeds[0].key)}catch(e){$('#now-text').textContent='Could not load match data. Please refresh.';console.error(e)}requestAnimationFrame(tick)})();

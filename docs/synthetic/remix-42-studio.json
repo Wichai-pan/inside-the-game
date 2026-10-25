@@ -1,7 +1,7 @@
 {
  "match": "Harbor City 1-2 Ridgeway United",
  "source": "Synthetic match stitched from real movement in the DFL open data (Bassek et al. 2025, CC BY 4.0); teams and players are fictional",
- "style_guide": "You are the studio pundit on a post-match show. House style:\n- Open with a verdict: one clear opinion about what decided the match, not a list of events.\n- Back every opinion with one or two numbers from the facts; never use a number that is not there.\n- Contrast is the engine: scoreline versus performance, one half versus the other, one team's plan versus the other's.\n- Name the moment or player that swung it, and say why in football terms (territory, pressing, chance quality, crosses).\n- Talk to the viewer, short spoken sentences, no bullet points, no hedging filler.\n- Every opinion must follow from the facts. Do not add anything the facts do not state: no fatigue, collapse,\n  morale, titles or league position, home or away status, weather, crowd, or where on the pitch something happened.\n- Keep team and player names exactly as written in the facts.\nReply with JSON only: {\"text\": \"<what you say on air>\"}",
+ "style_guide": "You are the studio pundit on a post-match show. House style:\n- Open with a verdict: one clear opinion about what decided the match, not a list of events.\n- Back every opinion with one or two numbers from the facts; never use a number that is not there.\n- Contrast is the engine: scoreline versus performance, one half versus the other, one team's plan versus the other's.\n- Name the moment or player that swung it, and say why in football terms (territory, pressing, chance quality, crosses).\n- Talk to the viewer, short spoken sentences, no bullet points, no hedging filler.\n- Every opinion must follow from the facts. Do not add anything the facts do not state: no fatigue, collapse,\n  morale, titles or league position, home or away status, weather, crowd, or where on the pitch something happened.\n- Copy who won, who had more and who did what from the facts; never work a comparison out yourself, and use each\n  number only for the statistic it belongs to. If the facts say the match ended level, no team won or deserved to win.\n- Total xG includes penalties; call a figure open-play xG only if the facts call it that. No ratios or multiples\n  (twice, three times) unless the facts give them.\n- No hype words (world-class, stunning, miracle, lethal, clinical, statement) and no home, away, hosts or visitors.\n- Keep team and player names exactly as written in the facts, and keep each player with his own team.\nReply with JSON only: {\"text\": \"<what you say on air>\"}",
  "sections": [
   {
    "id": "verdict",
@@ -13,18 +13,20 @@
     "en": [
      "Final score: Harbor City 1-2 Ridgeway.",
      "Ridgeway won the match.",
-     "xG: Harbor City 0.22, Ridgeway 0.90. Possession: Harbor City 39%, Ridgeway 61%.",
-     "Ridgeway had more xG than Harbor City (0.9 vs 0.22).",
-     "Ridgeway had more possession than Harbor City (61 vs 39).",
-     "1 of the 3 goals came from chances under 0.10 xG."
+     "xG: Harbor City 0.31, Ridgeway 1.04. Possession: Harbor City 64%, Ridgeway 36%.",
+     "Ridgeway had more xG than Harbor City (1.04 vs 0.31).",
+     "Harbor City had more possession than Ridgeway (64 vs 36).",
+     "Ridgeway, the side with more xG, won the match.",
+     "Ade Bankole (Harbor City) scored from a chance worth only 0.04 xG."
     ],
     "zh": [
      "终场比分：Harbor City 1-2 Ridgeway。",
      "Ridgeway 赢下了比赛。",
-     "预期进球：Harbor City 0.22，Ridgeway 0.90。控球率：Harbor City 39%，Ridgeway 61%。",
-     "Ridgeway 的预期进球多于 Harbor City（0.9 比 0.22）。",
-     "Ridgeway 的控球率多于 Harbor City（61 比 39）。",
-     "3 个进球中有 1 个来自预期进球低于 0.10 的机会。"
+     "预期进球：Harbor City 0.31，Ridgeway 1.04。控球率：Harbor City 64%，Ridgeway 36%。",
+     "Ridgeway 的预期进球多于 Harbor City（1.04 比 0.31）。",
+     "Harbor City 的控球率多于 Ridgeway（64 比 36）。",
+     "预期进球更多的 Ridgeway 赢下了比赛。",
+     "Ade Bankole（Harbor City）的进球来自预期进球只有 0.04 的机会。"
     ]
    },
    "players": [],
@@ -38,64 +40,70 @@
      ],
      [
       "xG",
-      0.22,
-      0.9
+      0.31,
+      1.04
      ],
      [
       "Shots",
-      3,
-      3
+      2,
+      2
      ],
      [
       "Possession %",
-      39,
-      61
+      64,
+      36
      ]
     ]
    },
    "text": {
     "casual": {
-     "en": {
-      "text": "Ridgeway won because they dominated with 61% possession and 0.90 xG against Harbor City's 0.22. The match swung on three goals, where one came from a chance under 0.10 xG.",
-      "source": "agent:qwen3.5:9b",
-      "attempts": 2,
-      "rejections": [
-       [
-        "Ridgeway United lead, not the other team"
-       ]
-      ],
-      "seconds": 402.0
-     },
      "zh": {
-      "text": "Ridgeway 凭控球和预期进球优势，以 2-1 击败 Harbor City。",
+      "text": "Ridgeway 凭 1.04 预期进球赢下控球率更高的 Harbor City。",
+      "source": "agent:qwen3.5:9b",
+      "attempts": 1,
+      "rejections": [],
+      "seconds": 183.6
+     },
+     "en": {
+      "text": "Ridgeway won with more chances created despite Harbor City's higher possession. The scoreline matched the 1.04 xG versus 0.31 gap.",
       "source": "agent:qwen3.5:9b",
       "attempts": 2,
       "rejections": [
        [
-        "Ridgeway United lead, not the other team"
+        "mentions Ade Bankole, who is not in this moment"
        ]
       ],
-      "seconds": 402.0
+      "seconds": 336.3
      }
     },
     "analyst": {
      "zh": {
-      "text": "Ridgeway 凭借 0.90 预期进球压制 0.22，终结比赛。",
-      "source": "agent:qwen3.5:9b",
-      "attempts": 1,
-      "rejections": [],
-      "seconds": 402.0
-     },
-     "en": {
-      "text": "Ridgeway's win is a statement; they created three times the chance value at 0.90 to Harbor City's 0.22. Despite one goal coming from low-quality territory under 0.10 xG, their 61% possession dominated the match.",
+      "text": "Ridgeway 以 1.04 比 0.31 的预期进球获胜，尽管控球率仅 36%。",
       "source": "agent:qwen3.5:9b",
       "attempts": 2,
       "rejections": [
        [
-        "Ridgeway United lead, not the other team"
+        "mentions Ade Bankole, who is not in this moment"
        ]
       ],
-      "seconds": 402.0
+      "seconds": 319.3
+     },
+     "en": {
+      "text": "Final score: Harbor City 1-2 Ridgeway. Ridgeway won the match.",
+      "source": "template_fallback",
+      "attempts": 3,
+      "rejections": [
+       [
+        "mentions Ade Bankole, who is not in this moment"
+       ],
+       [
+        "invented colour 'the visitors'"
+       ],
+       [
+        "mentions Ade Bankole, who is not in this moment"
+       ]
+      ],
+      "seconds": 386.6
      }
     }
    }
@@ -108,47 +116,53 @@
    },
    "facts": {
     "en": [
-     "In the 4th minute Callum Ashby scored for Harbor City from a 0.15 xG chance, set up by Tomas Reyna: Harbor City 1-0 Ridgeway.",
-     "In the 7th minute Luca Brennan scored for Ridgeway from a 0.04 xG chance, set up by Pieter Lund: Harbor City 1-1 Ridgeway.",
-     "In the 8th minute Luca Brennan scored for Ridgeway from a 0.85 xG chance: Harbor City 1-2 Ridgeway.",
-     "The last goal came 1 minute after the previous one and was the winner."
+     "In the 3rd minute Luca Brennan scored for Ridgeway from a 0.27 xG chance, set up by Yusuf Arslan: Harbor City 0-1 Ridgeway.",
+     "Ridgeway took the lead.",
+     "In the 5th minute Yusuf Arslan scored for Ridgeway from the penalty spot: Harbor City 0-2 Ridgeway.",
+     "Ridgeway extended their lead.",
+     "In the 11th minute Ade Bankole scored for Harbor City from a 0.04 xG chance, set up by Tomas Reyna: Harbor City 1-2 Ridgeway.",
+     "Harbor City pulled one back; Ridgeway still led.",
+     "The last goal came 6 minutes after the previous one."
     ],
     "zh": [
-     "第 4 分钟，Callum Ashby 为 Harbor City 把握住预期进球 0.15 的机会，助攻者 Tomas Reyna，比分 Harbor City 1-0 Ridgeway。",
-     "第 7 分钟，Luca Brennan 为 Ridgeway 把握住预期进球 0.04 的机会，助攻者 Pieter Lund，比分 Harbor City 1-1 Ridgeway。",
-     "第 8 分钟，Luca Brennan 为 Ridgeway 把握住预期进球 0.85 的机会，比分 Harbor City 1-2 Ridgeway。",
-     "最后一个进球距上一个进球只有 1 分钟，成为制胜球。"
+     "第 3 分钟，Luca Brennan 为 Ridgeway 把握住预期进球 0.27 的机会，助攻者 Yusuf Arslan，比分 Harbor City 0-1 Ridgeway。",
+     "Ridgeway 取得领先。",
+     "第 5 分钟，Yusuf Arslan 为 Ridgeway 罚进点球，比分 Harbor City 0-2 Ridgeway。",
+     "Ridgeway 扩大了领先优势。",
+     "第 11 分钟，Ade Bankole 为 Harbor City 把握住预期进球 0.04 的机会，助攻者 Tomas Reyna，比分 Harbor City 1-2 Ridgeway。",
+     "Harbor City 扳回一球，Ridgeway 仍然领先。",
+     "最后一个进球距上一个进球只有 6 分钟。"
     ]
    },
    "players": [
-    "Callum Ashby",
+    "Ade Bankole",
     "Luca Brennan",
-    "Pieter Lund",
-    "Tomas Reyna"
+    "Tomas Reyna",
+    "Yusuf Arslan"
    ],
    "graphic": {
     "type": "timeline",
     "length": 11,
     "goals": [
      {
-      "minute": 4,
+      "minute": 3,
+      "team": "Ridgeway",
+      "player": "Luca Brennan",
+      "xg": 0.269,
+      "penalty": false
+     },
+     {
+      "minute": 5,
+      "team": "Ridgeway",
+      "player": "Yusuf Arslan",
+      "xg": 0.767,
+      "penalty": true
+     },
+     {
+      "minute": 11,
       "team": "Harbor City",
-      "player": "Callum Ashby",
-      "xg": 0.155,
-      "penalty": false
-     },
-     {
-      "minute": 7,
-      "team": "Ridgeway",
-      "player": "Luca Brennan",
+      "player": "Ade Bankole",
       "xg": 0.04,
-      "penalty": false
-     },
-     {
-      "minute": 8,
-      "team": "Ridgeway",
-      "player": "Luca Brennan",
-      "xg": 0.849,
       "penalty": false
      }
     ]
@@ -156,64 +170,48 @@
    "text": {
     "casual": {
      "zh": {
-      "text": "第 8 分钟，Luca Brennan 的 0.85 预期进球终结比赛。",
+      "text": "Yusuf Arslan 的点球让 Ridgeway 以 0-2 领先",
       "source": "agent:qwen3.5:9b",
-      "attempts": 2,
-      "rejections": [
-       [
-        "claims '反超' which the facts do not support"
-       ]
-      ],
-      "seconds": 402.0
+      "attempts": 1,
+      "rejections": [],
+      "seconds": 160.9
      },
      "en": {
-      "text": "In the 4th minute Callum Ashby scored for Harbor City from a 0.15 xG chance, set up by Tomas Reyna: Harbor City 1-0 Ridgeway. In the 7th minute Luca Brennan scored for Ridgeway from a 0.04 xG chance, set up by Pieter Lund: Harbor City 1-1 Ridgeway.",
-      "source": "template_fallback",
+      "text": "Yusuf Arslan swung it with two goals, including a penalty in the fifth minute to make it 0-2. Harbor City pulled one back via Ade Bankole but could not stop Ridgeway's lead.",
+      "source": "agent:qwen3.5:9b",
       "attempts": 3,
       "rejections": [
        [
-        "claims 'scoring' which the facts do not support",
-        "claims 'lead' which the facts do not support"
+        "claims 'scoring' which the facts do not support"
        ],
        [
-        "claims 'equalizer' which the facts do not support"
-       ],
-       [
-        "claims 'scoring' which the facts do not support",
-        "claims 'lead' which the facts do not support"
+        "claims 'assist' which the facts do not support"
        ]
       ],
-      "seconds": 402.0
+      "seconds": 377.6
      }
     },
     "analyst": {
      "zh": {
-      "text": "第 8 分钟 Brennan 的 0.85 xG 机会在 1 分钟内转化为制胜球，彻底扭转了局势。",
+      "text": "第 5 分钟的点球将差距拉大到 0-2，随后 Ade Bankole 仅得 0.04 预期进球扳回一球。",
       "source": "agent:qwen3.5:9b",
       "attempts": 1,
       "rejections": [],
-      "seconds": 402.0
+      "seconds": 154.7
      },
      "en": {
-      "text": "In the 4th minute Callum Ashby scored for Harbor City from a 0.15 xG chance, set up by Tomas Reyna: Harbor City 1-0 Ridgeway. In the 7th minute Luca Brennan scored for Ridgeway from a 0.04 xG chance, set up by Pieter Lund: Harbor City 1-1 Ridgeway.",
-      "source": "template_fallback",
+      "text": "The match swung when Luca Brennan scored in the third minute from a 0.27 xG chance, followed by Yusuf Arslan's penalty five minutes later to make it 0-2. Harbor City pulled one back via Ade Bankole's finish on a 0.04 xG chance six minutes after the previous goal.",
+      "source": "agent:qwen3.5:9b",
       "attempts": 3,
       "rejections": [
        [
-        "claims 'equalizer' which the facts do not support",
-        "claims 'counter' which the facts do not support"
+        "Ridgeway United lead, not the other team"
        ],
        [
-        "claims 'equalizer' which the facts do not support",
-        "claims 'lead' which the facts do not support"
-       ],
-       [
-        "number 3 is not in the facts",
-        "claims 'equalizer' which the facts do not support",
-        "claims 'lead' which the facts do not support"
+        "claims 'scoring' which the facts do not support"
        ]
       ],
-      "seconds": 402.0
+      "seconds": 371.1
      }
     }
    }
@@ -226,14 +224,14 @@
    },
    "facts": {
     "en": [
-     "Between minutes 4-6, Ridgeway had 80% possession.",
-     "Between minutes 2-4, Harbor City had a field tilt of 85%, meaning they had most of the ball in the final third.",
-     "Shots in minutes 0-6: Harbor City 2, Ridgeway 0. Shots in minutes 6-11: Harbor City 1, Ridgeway 3."
+     "Between minutes 0-2, Ridgeway had 54% possession.",
+     "Between minutes 8-10, Harbor City had a field tilt of 79%, meaning they had most of the ball in the final third.",
+     "Shots in minutes 0-6: Harbor City 1, Ridgeway 2. Shots in minutes 6-12: Harbor City 1, Ridgeway 0."
     ],
     "zh": [
-     "第 4-6 分钟，Ridgeway 控球率 80%。",
-     "第 2-4 分钟，Harbor City 的场地倾斜度达到 85%，即大部分在前场三分之一的控球属于他们。",
-     "第 0-6 分钟射门：Harbor City 2，Ridgeway 0。第 6-11 分钟射门：Harbor City 1，Ridgeway 3。"
+     "第 0-2 分钟，Ridgeway 控球率 54%。",
+     "第 8-10 分钟，Harbor City 的场地倾斜度达到 79%，即大部分在前场三分之一的控球属于他们。",
+     "第 0-6 分钟射门：Harbor City 1，Ridgeway 2。第 6-12 分钟射门：Harbor City 1，Ridgeway 0。"
     ]
    },
    "players": [],
@@ -243,117 +241,88 @@
     "rows": [
      {
       "minutes": "0-2",
-      "home": 72,
-      "away": 28,
-      "home_possession": 58,
-      "away_possession": 42
+      "home": 6,
+      "away": 94,
+      "home_possession": 46,
+      "away_possession": 54
      },
      {
       "minutes": "2-4",
-      "home": 85,
-      "away": 15,
-      "home_possession": 75,
-      "away_possession": 25
+      "home": 72,
+      "away": 28,
+      "home_possession": 70,
+      "away_possession": 30
      },
      {
       "minutes": "4-6",
-      "home": 22,
-      "away": 78,
-      "home_possession": 20,
-      "away_possession": 80
+      "home": 21,
+      "away": 79,
+      "home_possession": 70,
+      "away_possession": 30
      },
      {
       "minutes": "6-8",
       "home": 37,
       "away": 63,
-      "home_possession": 31,
-      "away_possession": 69
+      "home_possession": 54,
+      "away_possession": 46
      },
      {
       "minutes": "8-10",
-      "home": 19,
-      "away": 81,
-      "home_possession": 24,
-      "away_possession": 76
+      "home": 79,
+      "away": 21,
+      "home_possession": 80,
+      "away_possession": 20
      },
      {
-      "minutes": "10-11",
-      "home": 84,
-      "away": 16,
-      "home_possession": 23,
-      "away_possession": 77
+      "minutes": "10-12",
+      "home": 22,
+      "away": 78,
+      "home_possession": 58,
+      "away_possession": 42
      }
     ]
    },
    "text": {
     "casual": {
+     "en": {
+      "text": "Ridgeway started with more shots and higher possession, but Harbor City took control late with a massive field tilt of 79%. The game swung from Ridgeway's early pressure to Harbor City's final-third dominance.",
+      "source": "agent:qwen3.5:9b",
+      "attempts": 1,
+      "rejections": [],
+      "seconds": 148.5
+     },
      "zh": {
-      "text": "Harbor City 前场控球多，但 Ridgeway 射门更多。",
+      "text": "前段 Ridgeway 控球多，后段 Harbor City 前场占优。",
       "source": "agent:qwen3.5:9b",
       "attempts": 2,
       "rejections": [
        [
-        "claims '反超' which the facts do not support",
         "claims '上半场' which the facts do not support",
         "claims '下半场' which the facts do not support"
        ]
       ],
-      "seconds": 402.0
-     },
-     "en": {
-      "text": "Harbor City dominated early with an 85% field tilt before minutes 6, but Ridgeway took control after that mark. They answered with three shots in the opening six minutes versus Harbor City's two.",
-      "source": "agent:qwen3.5:9b",
-      "attempts": 3,
-      "rejections": [
-       [
-        "claims 'second half' which the facts do not support"
-       ],
-       [
-        "Ridgeway United lead, not the other team"
-       ]
-      ],
-      "seconds": 402.0
+      "seconds": 273.9
      }
     },
     "analyst": {
      "en": {
-      "text": "Between minutes 4-6, Ridgeway had 80% possession. Between minutes 2-4, Harbor City had a field tilt of 85%, meaning they had most of the ball in the final third.",
-      "source": "template_fallback",
-      "attempts": 3,
-      "rejections": [
-       [
-        "claims 'minute' which the facts do not support"
-       ],
-       [
-        "claims 'lead' which the facts do not support",
-        "claims 'second half' which the facts do not support"
-       ],
-       [
-        "number 5 is not in the facts",
-        "claims 'counter' which the facts do not support",
-        "claims 'minute' which the facts do not support"
-       ]
-      ],
-      "seconds": 402.0
+      "text": "Harbor City dominated the final third with a 79% field tilt while Ridgeway held early possession at 54%. The shift came when Ridgeway took two shots in the opening six minutes compared to one for Harbor City, but Harbor City added another shot between minutes six and twelve.",
+      "source": "agent:qwen3.5:9b",
+      "attempts": 1,
+      "rejections": [],
+      "seconds": 138.2
      },
      "zh": {
-      "text": "第 4-6 分钟，Ridgeway 控球率 80%。第 2-4 分钟，Harbor City 的场地倾斜度达到 85%，即大部分在前场三分之一的控球属于他们。",
-      "source": "template_fallback",
-      "attempts": 3,
+      "text": "前场倾斜度 79% 主导了比赛。Harbor City 第 8-10 分钟控球率飙升，而 Ridgeway 仅射入 2 球。",
+      "source": "agent:qwen3.5:9b",
+      "attempts": 2,
       "rejections": [
        [
-        "claims '进球' which the facts do not support",
-        "claims '反超' which the facts do not support",
         "claims '下半场' which the facts do not support"
-       ],
-       [
-        "Ridgeway United lead, not the other team"
-       ],
-       [
-        "Ridgeway United lead, not the other team"
        ]
       ],
-      "seconds": 402.0
+      "seconds": 264.1
      }
     }
    }
@@ -366,20 +335,20 @@
    },
    "facts": {
     "en": [
-     "Crosses: Harbor City 1, Ridgeway 3.",
-     "PPDA (opponent passes allowed per defensive action, lower means more pressing): Ridgeway 18.5, Harbor City 23.0.",
-     "Ridgeway had more pressing (lower PPDA) than Harbor City (18.5 vs 23.0).",
-     "Harbor City had more progressive passes than Ridgeway (9 vs 8).",
-     "Ridgeway had more crosses than Harbor City (3 vs 1).",
-     "Progressive passes: Harbor City 9, Ridgeway 8. Final-third entries: Harbor City 4, Ridgeway 3."
+     "Crosses: Harbor City 0, Ridgeway 1.",
+     "PPDA (opponent passes allowed per defensive action, lower means more pressing): Ridgeway 14.3, Harbor City 12.0.",
+     "Harbor City had more pressing (lower PPDA) than Ridgeway (12.0 vs 14.3).",
+     "Harbor City had more progressive passes than Ridgeway (11 vs 8).",
+     "Ridgeway had more crosses than Harbor City (1 vs 0).",
+     "Progressive passes: Harbor City 11, Ridgeway 8. Final-third entries: Harbor City 5, Ridgeway 4."
     ],
     "zh": [
-     "传中：Harbor City 1 次，Ridgeway 3 次。",
-     "PPDA（每次防守动作前允许对手传球数，越低代表逼抢越积极）：Ridgeway 18.5，Harbor City 23.0。",
-     "Ridgeway 的逼抢（PPDA 更低）多于 Harbor City（18.5 比 23.0）。",
-     "Harbor City 的推进传球多于 Ridgeway（9 比 8）。",
-     "Ridgeway 的传中多于 Harbor City（3 比 1）。",
-     "向前推进的传球：Harbor City 9，Ridgeway 8。进入前场三分之一：Harbor City 4，Ridgeway 3。"
+     "传中：Harbor City 0 次，Ridgeway 1 次。",
+     "PPDA（每次防守动作前允许对手传球数，越低代表逼抢越积极）：Ridgeway 14.3，Harbor City 12.0。",
+     "Harbor City 的逼抢（PPDA 更低）多于 Ridgeway（12.0 比 14.3）。",
+     "Harbor City 的推进传球多于 Ridgeway（11 比 8）。",
+     "Ridgeway 的传中多于 Harbor City（1 比 0）。",
+     "向前推进的传球：Harbor City 11，Ridgeway 8。进入前场三分之一：Harbor City 5，Ridgeway 4。"
     ]
    },
    "players": [],
@@ -388,57 +357,83 @@
     "rows": [
      [
       "Crosses",
-      1,
-      3
+      0,
+      1
      ],
      [
       "PPDA",
-      23.0,
-      18.5
+      12.0,
+      14.3
      ],
      [
       "Progressive passes",
-      9,
+      11,
       8
      ],
      [
       "Final-third entries",
-      4,
-      3
+      5,
+      4
      ]
     ]
    },
    "text": {
     "casual": {
      "en": {
-      "text": "Ridgeway pressed harder with a PPDA of 18.5 compared to Harbor City's 23.0, yet Harbor City moved the ball better with nine progressive passes against eight.",
+      "text": "Harbor City pressed harder with a PPDA of 12.0 compared to Ridgeway's 14.3, while also completing more progressive passes at 11 versus 8.",
       "source": "agent:qwen3.5:9b",
-      "attempts": 1,
-      "rejections": [],
-      "seconds": 402.0
+      "attempts": 2,
+      "rejections": [
+       [
+        "claims 'cross' which the facts do not support"
+       ]
+      ],
+      "seconds": 260.8
      },
      "zh": {
-      "text": "Ridgeway 逼抢更凶（PPDA 18.5），但 Harbor City 推进传球更多（9 次）。",
+      "text": "Harbor City 推进传球 11 次多于 Ridgeway 的 8 次，但 Ridgeway 有 1 次传中。",
       "source": "agent:qwen3.5:9b",
-      "attempts": 1,
-      "rejections": [],
-      "seconds": 402.0
+      "attempts": 2,
+      "rejections": [
+       [
+        "11 is not the possession",
+        "8 is not the possession"
+       ]
+      ],
+      "seconds": 255.5
      }
     },
     "analyst": {
      "en": {
-      "text": "Ridgeway's aggressive pressing with a PPDA of 18.5 against Harbor City's 23.0 contrasted sharply with their superior crossing game of three to one. Yet Harbor City generated more progressive passes at nine versus eight, showing they advanced the ball better despite Ridgeway's territorial dominance.",
-      "source": "agent:qwen3.5:9b",
-      "attempts": 1,
-      "rejections": [],
-      "seconds": 402.0
+      "text": "Crosses: Harbor City 0, Ridgeway 1. PPDA (opponent passes allowed per defensive action, lower means more pressing): Ridgeway 14.3, Harbor City 12.0.",
+      "source": "template_fallback",
+      "attempts": 3,
+      "rejections": [
+       [
+        "claims 'cross' which the facts do not support"
+       ],
+       [
+        "claims 'cross' which the facts do not support"
+       ],
+       [
+        "claims 'cross' which the facts do not support"
+       ]
+      ],
+      "seconds": 309.4
      },
      "zh": {
-      "text": "Ridgeway 逼抢更积极（PPDA 18.5），但 Harbor City 推进传球更多（9 次）。",
+      "text": "Harbor City 推进传球 11 次多于 Ridgeway 的 8 次，但传中仅 0 次。",
       "source": "agent:qwen3.5:9b",
-      "attempts": 1,
-      "rejections": [],
-      "seconds": 402.0
+      "attempts": 3,
+      "rejections": [
+       [
+        "number 3 is not in the facts"
+       ],
+       [
+        "says Ridgeway United had more progressive, but it was 8 vs 11"
+       ]
+      ],
+      "seconds": 304.0
      }
     }
    }
@@ -451,18 +446,24 @@
    },
    "facts": {
     "en": [
-     "xG: Harbor City 0.22, Ridgeway 0.90. Goals: Harbor City 1, Ridgeway 2.",
-     "Ridgeway had more xG than Harbor City (0.9 vs 0.22).",
-     "There were no penalties.",
-     "Harbor City scored 1 from 3 shots, 1 on target.",
-     "Ridgeway scored 2 from 3 shots, 2 on target."
+     "xG: Harbor City 0.31, Ridgeway 1.04. Goals: Harbor City 1, Ridgeway 2.",
+     "Ridgeway won the match.",
+     "Ridgeway had more xG than Harbor City (1.04 vs 0.31).",
+     "Without penalties (open-play xG), xG was Harbor City 0.31, Ridgeway 0.27.",
+     "Total xG includes the penalties.",
+     "Harbor City had more open-play xG (without penalties) than Ridgeway (0.31 vs 0.27).",
+     "Harbor City scored 1 from 2 shots, 1 on target.",
+     "Ridgeway scored 2 from 2 shots, 2 on target."
     ],
     "zh": [
-     "预期进球：Harbor City 0.22，Ridgeway 0.90。进球：Harbor City 1，Ridgeway 2。",
-     "Ridgeway 的预期进球多于 Harbor City（0.9 比 0.22）。",
-     "本场没有点球。",
-     "Harbor City 3 次射门、1 次射正，打进 1 球。",
-     "Ridgeway 3 次射门、2 次射正，打进 2 球。"
+     "预期进球：Harbor City 0.31，Ridgeway 1.04。进球：Harbor City 1，Ridgeway 2。",
+     "Ridgeway 赢下了比赛。",
+     "Ridgeway 的预期进球多于 Harbor City（1.04 比 0.31）。",
+     "去掉点球后（非点球预期进球），预期进球为 Harbor City 0.31，Ridgeway 0.27。",
+     "总预期进球包含点球。",
+     "Harbor City 的非点球预期进球多于 Ridgeway（0.31 比 0.27）。",
+     "Harbor City 2 次射门、1 次射正，打进 1 球。",
+     "Ridgeway 2 次射门、2 次射正，打进 2 球。"
     ]
    },
    "players": [],
@@ -471,13 +472,13 @@
     "rows": [
      [
       "xG",
-      0.22,
-      0.9
+      0.31,
+      1.04
      ],
      [
       "Non-penalty xG",
-      0.22,
-      0.9
+      0.31,
+      0.27
      ],
      [
       "Goals",
@@ -494,34 +495,42 @@
    "text": {
     "casual": {
      "en": {
-      "text": "The scoreline was fair as Ridgeway's 0.9 xG beat Harbor City's 0.22 in open play. Both teams shot three times, but Ridgeway converted twice to their two goals.",
+      "text": "The scoreline reflected Ridgeway's higher total xG of 1.04 against Harbor City's 0.31, but open-play chances favored Harbor City at 0.31 versus Ridgeway's 0.27.",
       "source": "agent:qwen3.5:9b",
       "attempts": 1,
       "rejections": [],
-      "seconds": 402.0
+      "seconds": 95.1
      },
      "zh": {
-      "text": "Ridgeway 的 0.90 预期进球证明比分公平，他们创造了更多开放场地的机会。",
+      "text": "Ridgeway 的 1.04 预期进球远超 Harbor City 的 0.31，分差合理。",
       "source": "agent:qwen3.5:9b",
-      "attempts": 1,
-      "rejections": [],
-      "seconds": 402.0
+      "attempts": 2,
+      "rejections": [
+       [
+        "says Harbor City had more xg, but it was 0.31 vs 1.04"
+       ]
+      ],
+      "seconds": 225.6
      }
     },
     "analyst": {
      "en": {
-      "text": "The scoreline was fair, with Ridgeway's superior open-play xG of 0.90 against Harbor City's 0.22 reflecting their dominance. They converted two of three shots to two goals, while Harbor City managed just one from three attempts.",
+      "text": "Ridgeway won with a total xG of 1.04 against Harbor City's 0.31, but the scoreline hid that Harbor City actually generated more open-play xG at 0.31 versus Ridgeway's 0.27. Ridgeway converted both shots to reach two goals while Harbor City took one from two attempts.",
       "source": "agent:qwen3.5:9b",
       "attempts": 1,
       "rejections": [],
-      "seconds": 402.0
+      "seconds": 82.7
      },
      "zh": {
-      "text": "Ridgeway 0.90 预期进球碾压 Harbor City 0.22，分差完全合理。",
+      "text": "Ridgeway 胜因总 xG 1.04 超 0.31；开球 xG 0.27 反被 Harbor City 0.31 超越。",
       "source": "agent:qwen3.5:9b",
-      "attempts": 1,
-      "rejections": [],
-      "seconds": 402.0
+      "attempts": 2,
+      "rejections": [
+       [
+        "claims '反超' which the facts do not support"
+       ]
+      ],
+      "seconds": 208.2
      }
     }
    }
@@ -534,25 +543,25 @@
    },
    "facts": {
     "en": [
-     "Elias Varga (Ridgeway) covered the most ground: 1.59 km.",
-     "Rafe Delmont (Harbor City) made the most sprints, 5, with a top speed of 29.8 km/h.",
-     "Luca Brennan (Ridgeway) took the most shots: 2, worth 0.89 xG.",
-     "Elias Varga (Ridgeway) won the most tackles: 2.",
-     "Tomas Reyna (Harbor City) added the most threat with his passing: 0.24 xT."
+     "Elias Varga (Ridgeway) covered the most ground: 1.57 km.",
+     "Lenny Voss (Harbor City) made the most sprints, 5, with a top speed of 28.6 km/h.",
+     "Yusuf Arslan (Ridgeway) took the most shots: 1, worth 0.77 xG.",
+     "Lenny Voss (Harbor City) won the most tackles: 1.",
+     "Sami Halloran (Harbor City) added the most threat with his passing: 0.23 xT."
     ],
     "zh": [
-     "Elias Varga（Ridgeway）跑动最多：1.59 公里。",
-     "Rafe Delmont（Harbor City）冲刺次数最多，5 次，最高时速 29.8 公里。",
-     "Luca Brennan（Ridgeway）射门最多：2 次，预期进球 0.89。",
-     "Elias Varga（Ridgeway）抢断成功最多：2 次。",
-     "Tomas Reyna（Harbor City）通过传球制造的威胁最多：xT 0.24。"
+     "Elias Varga（Ridgeway）跑动最多：1.57 公里。",
+     "Lenny Voss（Harbor City）冲刺次数最多，5 次，最高时速 28.6 公里。",
+     "Yusuf Arslan（Ridgeway）射门最多：1 次，预期进球 0.77。",
+     "Lenny Voss（Harbor City）抢断成功最多：1 次。",
+     "Sami Halloran（Harbor City）通过传球制造的威胁最多：xT 0.23。"
     ]
    },
    "players": [
     "Elias Varga",
-    "Luca Brennan",
-    "Rafe Delmont",
-    "Tomas Reyna"
+    "Lenny Voss",
+    "Sami Halloran",
+    "Yusuf Arslan"
    ],
    "graphic": {
     "type": "players",
@@ -561,69 +570,69 @@
       "player": "Elias Varga",
       "team": "Ridgeway",
       "stat": "distance",
-      "value": 1.59
+      "value": 1.57
      },
      {
-      "player": "Rafe Delmont",
+      "player": "Lenny Voss",
       "team": "Harbor City",
       "stat": "sprints",
       "value": 5
      },
      {
-      "player": "Luca Brennan",
+      "player": "Yusuf Arslan",
       "team": "Ridgeway",
       "stat": "shots",
-      "value": 2
+      "value": 1
      },
      {
-      "player": "Elias Varga",
-      "team": "Ridgeway",
+      "player": "Lenny Voss",
+      "team": "Harbor City",
       "stat": "tackles",
-      "value": 2
+      "value": 1
      },
      {
-      "player": "Tomas Reyna",
+      "player": "Sami Halloran",
       "team": "Harbor City",
       "stat": "xt",
-      "value": 0.245
+      "value": 0.227
      }
     ]
    },
    "text": {
     "casual": {
      "en": {
-      "text": "Luca Brennan drove Ridgeway's attack with two shots worth 0.89 xG, while Rafe Delmont harassed Harbor City with five sprints at 29.8 km/h.",
+      "text": "Yusuf Arslan swung it with one shot creating 0.77 xG, while Lenny Voss dominated with five sprints and one tackle.",
       "source": "agent:qwen3.5:9b",
       "attempts": 1,
       "rejections": [],
-      "seconds": 402.0
+      "seconds": 65.6
      },
      "zh": {
-      "text": "Luca Brennan 两射贡献 0.89 预期进球，Rafe Delmont 五次冲刺主宰节奏。",
+      "text": "Elias Varga 跑动 1.57 公里，Yusuf Arslan 射门 xG 0.77。",
       "source": "agent:qwen3.5:9b",
       "attempts": 1,
       "rejections": [],
-      "seconds": 402.0
+      "seconds": 59.3
      }
     },
     "analyst": {
-     "en": {
-      "text": "Luca Brennan drove Ridgeway's attack with two shots generating 0.89 xG, while Rafe Delmont dictated Harbor City's pace with five sprints at 29.8 km/h. Varga secured the midfield battle by winning two tackles and covering 1.59 km to control the tempo.",
+     "zh": {
+      "text": "Yusuf Arslan 预期进球 0.77，Lenny Voss 冲刺 5 次且 xT 0.23。",
       "source": "agent:qwen3.5:9b",
       "attempts": 1,
       "rejections": [],
-      "seconds": 402.0
+      "seconds": 43.2
      },
-     "zh": {
-      "text": "Luca Brennan 两脚射门贡献 0.89 预期进球，Rafe Delmont 五次冲刺最高时速 29.8 公里。",
+     "en": {
+      "text": "Yusuf Arslan drove Ridgeway's attack, registering one shot worth 0.77 xG. Lenny Voss countered with five sprints at 28.6 km/h and a single tackle, while Sami Halloran generated 0.23 xT through his passing.",
       "source": "agent:qwen3.5:9b",
       "attempts": 2,
       "rejections": [
        [
-        "29.8 kmh does not match any measurement in the facts"
+        "5 is not the ppda or tackles"
        ]
       ],
-      "seconds": 402.0
+      "seconds": 186.0
      }
     }
    }
@@ -651,8 +660,8 @@
    "studio_producer"
   ],
   "texts": 24,
-  "agent_texts": 20,
-  "retried": 11,
-  "seconds": 402.0
+  "agent_texts": 22,
+  "retried": 14,
+  "seconds": 413.6
  }
 }

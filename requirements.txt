@@ -5,3 +5,9 @@ httpx==0.28.1
 anyio==4.15.1
 kloppy==3.19.1
 databallpy==0.8.1
+agent-framework-foundry==1.15.0
+agent-framework-openai==1.17.0
+azure-identity==1.26.0
+mcp==2.3.0
+tenacity==9.2.1
+pytest==9.1.1

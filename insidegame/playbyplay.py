@@ -8,7 +8,7 @@ time plus the measured generation time. A single speaker plays the track, as a v
 - each caption lasts as long as it takes to say (about 2.6 words/s in English, 4.5 characters/s
   in Chinese);
 - urgent calls (shots, goals, ball wins, fouls) cut in; routine passes are only called when the
-  speaker is free, and repeated names are shortened ("Kimmich to Pavard." then "Upamecano.");
+  speaker is free, and repeated names are shortened ("Kessler to Voss." then "Ashby.");
 - an analysis line waits for a gap of play-by-play and is dropped if it is still unsaid 15 s
   after it was ready, because by then play has moved on.
 """
@@ -205,8 +205,17 @@ def schedule(match, events, moments, profile, lang):
                 short = True
         elif when < busy_until:
             if pr >= 6 and track:  # urgent calls cut in, analysis included
-                track[-1]["end"] = round(when, 2)
-                track[-1]["cut"] = True
+                # lines queued to start after this moment have not been said yet: the urgent call replaces them
+                waiting = [c for c in track if c["t"] > when and not c.get("dropped")]
+                for c in waiting:
+                    track.remove(c)
+                    if c["voice"] == "analysis":
+                        track.append({"t": round(when, 2), "end": round(when, 2), "voice": "analysis", "dropped": True,
+                                      "moment": c["moment"], "text": c["text"], "ready": c["ready"]})
+                said = [c for c in track if not c.get("dropped")]
+                if said and said[-1]["end"] > when:
+                    said[-1]["end"] = round(when, 2)
+                    said[-1]["cut"] = True
             elif when + 0.8 < busy_until:
                 continue
             else:

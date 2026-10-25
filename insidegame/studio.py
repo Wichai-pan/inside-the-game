@@ -36,7 +36,12 @@ STYLE_GUIDE = """You are the studio pundit on a post-match show. House style:
 - Talk to the viewer, short spoken sentences, no bullet points, no hedging filler.
 - Every opinion must follow from the facts. Do not add anything the facts do not state: no fatigue, collapse,
   morale, titles or league position, home or away status, weather, crowd, or where on the pitch something happened.
-- Keep team and player names exactly as written in the facts.
+- Copy who won, who had more and who did what from the facts; never work a comparison out yourself, and use each
+  number only for the statistic it belongs to. If the facts say the match ended level, no team won or deserved to win.
+- Total xG includes penalties; call a figure open-play xG only if the facts call it that. No ratios or multiples
+  (twice, three times) unless the facts give them.
+- No hype words (world-class, stunning, miracle, lethal, clinical, statement) and no home, away, hosts or visitors.
+- Keep team and player names exactly as written in the facts, and keep each player with his own team.
 Reply with JSON only: {"text": "<what you say on air>"}"""
 
 SECTION_BRIEF = {
@@ -99,10 +104,15 @@ def storylines(stats):
     for c in (_more(H, round(h["xg"], 2), A, round(a["xg"], 2), "xG", "预期进球"),
               _more(H, h["possession_pct"], A, a["possession_pct"], "possession", "控球率")):
         en.append(c[0]); zh.append(c[1])
-    low = [g for g in goals if g["xg"] < 0.1]
-    if low:
-        en.append(f"{len(low)} of the {len(goals)} goals came from chances under 0.10 xG.")
-        zh.append(f"{len(goals)} 个进球中有 {len(low)} 个来自预期进球低于 0.10 的机会。")
+    xg_more = H if h["xg"] > a["xg"] else A if a["xg"] > h["xg"] else None
+    if xg_more:
+        res = ("won" if xg_more == winner else "drew" if not winner else "lost")
+        en.append(f"{xg_more}, the side with more xG, {res}" + (" the match." if res != "drew" else "."))
+        zh.append(f"预期进球更多的 {xg_more} " + {"won": "赢下了比赛。", "drew": "只拿到平局。", "lost": "输掉了比赛。"}[res])
+    for g in goals:
+        if g["xg"] < 0.1 and not g["penalty"]:  # say whose goal it was, not "one of the goals"
+            en.append(f"{g['player']} ({short[g['team']]}) scored from a chance worth only {g['xg']:.2f} xG.")
+            zh.append(f"{g['player']}（{short[g['team']]}）的进球来自预期进球只有 {g['xg']:.2f} 的机会。")
     out.append(section("verdict", "The verdict", "比赛结论", en, zh, [], {
         "type": "compare", "rows": [["Goals", h["goals"], a["goals"]], ["xG", h["xg"], a["xg"]],
                                     ["Shots", h["shots"], a["shots"]], ["Possession %", h["possession_pct"], a["possession_pct"]]]}))
@@ -118,6 +128,16 @@ def storylines(stats):
         ast_zh = f"，助攻者 {g['assist']}" if g.get("assist") else ""
         en.append(f"In the {_nth(_min(g['minute']))} minute {g['player']} scored for {side} {how_en}{ast_en}: {H} {score[H]}-{score[A]} {A}.")
         zh.append(f"第 {_min(g['minute'])} 分钟，{g['player']} 为 {side} {how_zh}{ast_zh}，比分 {H} {score[H]}-{score[A]} {A}。")
+        other = A if side == H else H
+        mine, theirs = score[side], score[other]
+        if mine == theirs:
+            en.append(f"{side} equalised."); zh.append(f"{side} 扳平了比分。")
+        elif mine > theirs and mine - 1 == theirs:
+            en.append(f"{side} took the lead."); zh.append(f"{side} 取得领先。")
+        elif mine > theirs:
+            en.append(f"{side} extended their lead."); zh.append(f"{side} 扩大了领先优势。")
+        else:
+            en.append(f"{side} pulled one back; {other} still led."); zh.append(f"{side} 扳回一球，{other} 仍然领先。")
         names += [g["player"]] + ([g["assist"]] if g.get("assist") else [])
     if len(goals) >= 2:
         gap = _min(goals[-1]["minute"]) - _min(goals[-2]["minute"])
@@ -182,13 +202,18 @@ def storylines(stats):
     en = [f"xG: {H} {h['xg']:.2f}, {A} {a['xg']:.2f}. Goals: {H} {h['goals']}, {A} {a['goals']}."]
     zh = [f"预期进球：{H} {h['xg']:.2f}，{A} {a['xg']:.2f}。进球：{H} {h['goals']}，{A} {a['goals']}。"]
     if not winner:
-        en.append("The match ended level.")
-        zh.append("双方战平。")
+        en.append("The match ended level: neither team won.")
+        zh.append("双方战平，没有球队获胜。")
+    else:
+        en.append(f"{winner} won the match.")
+        zh.append(f"{winner} 赢下了比赛。")
     c = _more(H, round(h["xg"], 2), A, round(a["xg"], 2), "xG", "预期进球")
     en.append(c[0]); zh.append(c[1])
     if pens:
-        en.append(f"Without penalties, xG was {H} {np_h:.2f}, {A} {np_a:.2f}.")
-        zh.append(f"去掉点球后，预期进球为 {H} {np_h:.2f}，{A} {np_a:.2f}。")
+        en.append(f"Without penalties (open-play xG), xG was {H} {np_h:.2f}, {A} {np_a:.2f}.")
+        zh.append(f"去掉点球后（非点球预期进球），预期进球为 {H} {np_h:.2f}，{A} {np_a:.2f}。")
+        en.append("Total xG includes the penalties.")
+        zh.append("总预期进球包含点球。")
         c = _more(H, round(np_h, 2), A, round(np_a, 2), "open-play xG (without penalties)", "非点球预期进球")
         en.append(c[0]); zh.append(c[1])
     else:
@@ -240,6 +265,7 @@ class SectionJob:
     attempt: int = 1
     rejections: list = field(default_factory=list)
     released: float = field(default_factory=time.perf_counter)
+    started: float = None
 
 
 @dataclass
@@ -253,6 +279,7 @@ class Done:
     job: SectionJob
     text: str
     source: str
+    finished: float = field(default_factory=time.perf_counter)
 
 
 class StoryPlanner(Executor):
@@ -265,6 +292,7 @@ class StoryPlanner(Executor):
         ctx.set_state("sections", sections)
         ctx.set_state("expected_claims", expected)
         ctx.set_state("roster", [{"id": p["player"], "name": p["player"]} for p in stats["players"]])
+        ctx.set_state("stats", stats)
         jobs = [SectionJob(s, p, l) for s in sections for p in PROFILES for l in LANGS]
         ctx.set_state("count", len(jobs))
         ctx.set_state("done", [])
@@ -279,6 +307,7 @@ class SectionWriter(Executor):
 
     @handler
     async def write(self, job: SectionJob, ctx: WorkflowContext[Draft]) -> None:
+        job.started = job.started or time.perf_counter()
         en_len, zh_len = LENGTH[job.profile]
         audience = ("Audience: casual fans; plain words, at most two numbers."
                     if job.profile == "casual" else "Audience: analysts; lead with the decisive numbers.")
@@ -287,8 +316,8 @@ class SectionWriter(Executor):
         if job.rejections:
             prompt += "\n\nYour previous answer was rejected for: " + "; ".join(job.rejections[-1]) + ". Rewrite it."
         try:
-            res = await self.agent.run(prompt, options={"temperature": 0.4, "max_tokens": 220, "think": False,
-                                                        "response_format": "json"})
+            res = await asyncio.wait_for(self.agent.run(prompt, options={
+                "temperature": 0.4, "max_tokens": 220, "think": False, "response_format": "json"}), 120)
             text = json.loads(res.text).get("text", "").strip()
         except Exception as exc:
             text = ""
@@ -305,10 +334,13 @@ class SectionChecker(Executor):
     @handler
     async def check(self, draft: Draft, ctx: WorkflowContext[SectionJob | Done]) -> None:
         job = draft.job
-        facts = " ".join(job.section["facts"][job.lang] + [job.section["title"][job.lang]])
+        facts = " ".join(job.section["facts"][job.lang] + [job.section["title"][job.lang]]
+                         + (["minute"] if job.section["id"] in ("momentum", "turning_point") else []))
         limit = {"casual": 48, "analyst": 70}[job.profile] if job.lang == "en" else {"casual": 100, "analyst": 150}[job.profile]
         teams = [n for t in ctx.get_state("expected_claims")["teams"] for n in (t["name"], t["short"])]
         reasons = verify(draft.text, job.lang, facts, set(job.section["players"]), ctx.get_state("roster"), limit, teams)
+        if not reasons and draft.text:
+            reasons = section_rules(draft.text, job.lang, ctx.get_state("stats"), job.section)
         if not reasons and draft.text:
             try:
                 reasons = await audit(self.auditor, draft.text, ctx.get_state("expected_claims"))
@@ -325,6 +357,15 @@ class SectionChecker(Executor):
         else:
             sep = " " if job.lang == "en" else ""
             await ctx.send_message(Done(job, sep.join(job.section["facts"][job.lang][:2]), "template_fallback"))
+
+
+def section_rules(text, lang, stats, section):
+    """The pattern checks from insidegame/evaluate.py: who won or led, who scored or passed, comparisons, colour."""
+    from .evaluate import Names, check_text, reasons, studio_context, studio_players
+
+    players, teams, side = studio_players(stats)
+    names = Names(players, teams)
+    return reasons(check_text(text, lang, studio_context(stats, section, side), names))
 
 
 class StudioProducer(Executor):
@@ -344,7 +385,7 @@ class StudioProducer(Executor):
         for d in done:
             by_id[d.job.section["id"]]["text"][d.job.profile][d.job.lang] = {
                 "text": d.text, "source": d.source, "attempts": d.job.attempt, "rejections": d.job.rejections,
-                "seconds": round(time.perf_counter() - d.job.released, 1)}
+                "seconds": round(d.finished - (d.job.started or d.job.released), 1)}
         await ctx.yield_output({"sections": sections})
 
 
@@ -360,16 +401,16 @@ def build_workflow(client, model_label):
 
 
 async def main_async(args):
-    from agent_framework.ollama import OllamaChatClient
+    from .providers import get_client, model_label
 
     stats = json.loads(Path(args.stats).read_text())
     started = time.perf_counter()
-    result = await build_workflow(OllamaChatClient(model=args.model), args.model).run(stats)
+    result = await build_workflow(get_client(args.model), args.model).run(stats)
     sections = result.get_outputs()[-1]["sections"]
     texts = [t for s in sections for p in s["text"].values() for t in p.values()]
     out = {"match": stats["match"], "source": stats["source"], "style_guide": STYLE_GUIDE, "sections": sections,
            "teams": [{"name": t["team"], "call": t.get("call") or t["team"], "color": t.get("color")} for t in stats["teams"]],
-           "pipeline": {"framework": "Microsoft Agent Framework", "model": f"ollama:{args.model}",
+           "pipeline": {"framework": "Microsoft Agent Framework", "model": model_label(args.model),
                         "executors": ["story_planner", "section_writer", "section_checker", "studio_producer"],
                         "texts": len(texts), "agent_texts": sum(t["source"].startswith("agent") for t in texts),
                         "retried": sum(t["attempts"] > 1 for t in texts), "seconds": round(time.perf_counter() - started, 1)}}
