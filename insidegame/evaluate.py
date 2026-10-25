@@ -33,7 +33,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUNDLES = ROOT / "docs" / "synthetic"
 REPORTS = ROOT / "data" / "eval"
-TYPES = ("scoring_team", "passer_receiver", "shooter", "invented_event", "comparison", "number", "possession_window",
+TYPES = ("scoring_team", "passer_receiver", "self_reference", "shooter", "invented_event", "comparison", "number", "possession_window",
          "player_team",
          "colour", "zh_names")
 NUM_WORDS = {w: str(i) for i, w in enumerate(
@@ -98,6 +98,14 @@ def tokens(clause):
 
 
 # -- context ------------------------------------------------------------------------------------
+def _passes_by(passes):
+    """Passer -> lengths (m) of the passes he played."""
+    out = {}
+    for e in passes:
+        out.setdefault(e["actor"], set()).add(e["metrics"]["length_m"])
+    return out
+
+
 def _count(items):
     out = {}
     for i in items:
@@ -159,6 +167,7 @@ def moment_context(bundle, moment, names):
     return {
         "surface": "live", "teams": teams, "involved": set(moment["players"]),
         "pairs": {(e["actor"], e["target"]) for e in passes if e["outcome"] == "complete" and e.get("target")},
+        "passes_by": _passes_by(passes),
         "shooters": {e["actor"] for e in shots}, "scorers": {key["actor"]} if goal else set(),
         "shot_moment": moment["kind"] in ("goal", "shot"),
         "led": {leader} if leader else set(), "levelled": {key["team"]} if goal and leader is None else set(),
@@ -196,6 +205,7 @@ def recap_context(bundle, names):
     return {
         "surface": "recap", "teams": teams, "involved": {p["id"] for p in bundle["players"]},
         "pairs": {(e["actor"], e["target"]) for e in passes if e["outcome"] == "complete" and e.get("target")},
+        "passes_by": _passes_by(passes),
         "shooters": {e["actor"] for e in shots}, "scorers": {g["actor"] for g in goals}, "shot_moment": True,
         "goal_counts": _count([g["actor"] for g in goals]), "team_goals": _count([g["team"] for g in goals]),
         "led": led, "levelled": levelled, "scored": {g["team"] for g in goals}, "winner": winner, "final": True,
@@ -322,6 +332,41 @@ PASS_EN = (r"<P=([^>]+)>(?:'s)?(?:(?:\s+[a-z\-]+){0,3}?\s+(?:passes(?: to)?|pass
            r"(?:\s+[\w\-]+){0,3}?\s+(?:pass|ball|cross|delivery|feed)(?:\s+[a-z]+)?\s+(?:to|for|into)|\s+(?:to|for))\s+<P=([^>]+)>")
 PASS_ZH = r"<P=([^>]+)>\s*(?:[^，。<A-Za-z]{0,6}?)(?:传给|传球给|传中给|分球给|直塞给|送出助攻给|助攻|找到|传向|妙传|喂给)\s*<P=([^>]+)>"
 SET_UP_BY = r"(?:set up|teed up|assisted|fed) by <P=([^>]+)>"
+
+
+PASSER = {"en": r"<P=([^>]+)>(?:'s)?(?:\s+(?:completes|completed|plays|played|makes|made|launches|launched|delivers|delivered|"
+              r"fires|fired|threads|threaded|hits|sends|sent|whips|lofts|lofted|zips|attempts|clips|sprays|curls|rolls|slides)\b"
+              r"(?:\s+[\w\-/.,%]+){0,7}?|'s(?:\s+[\w\-/.,%]+){0,4}?)\s+(?:pass|through ball|long ball|cross)\b",
+          "zh": r"<P=([^>]+)>\s*(?:完成|送出|打出|送上|踢出|开出|贡献)(?:了)?[^，。<]{0,14}?(?:传球|长传|直塞|传中)"}
+
+
+def check_passer(tagged, lang, ctx):
+    """"Brennan completes a 25 m pass" when Brennan received it: the named player must have played that pass."""
+    errs = []
+    if ctx.get("passes_by") is None:
+        return errs
+    for c in sentences(tagged):
+        for m in re.finditer(PASSER[lang], c):
+            if re.search(r"(?:receives?|received|gets|collects|takes|from|接到|接)\s*$", c[:m.start()]):
+                continue
+            pid = m.group(1)
+            lengths = {int(float(x)) for x in re.findall(r"(\d+(?:\.\d+)?)\s*(?:m\b|米|metres?|meters?)", m.group(0))}
+            played = ctx["passes_by"].get(pid)
+            if not played:
+                errs.append(f"{L(ctx, pid)} did not play a pass in this move")
+            elif lengths and not lengths & played:
+                errs.append(f"{L(ctx, pid)} did not play the {'/'.join(map(str, sorted(lengths)))} m pass")
+    return errs
+
+
+def check_self_reference(tagged, lang, ctx):
+    """"Callum Ashby finishes Callum Ashby's shot": one player named twice in a clause, as if two players."""
+    errs = []
+    for c in clauses(tagged, lang):
+        ids = [t[1] for t in tokens(c) if t[0] == "P"]
+        for pid in sorted({i for i in ids if ids.count(i) > 1}):
+            errs.append(f"names {L(ctx, pid)} twice in one phrase")
+    return errs
 
 
 def check_passes(tagged, lang, ctx):
@@ -693,7 +738,8 @@ def check_text(text, lang, ctx, names, types=TYPES):
     tagged = names.tag(text_n)
     found = {
         "scoring_team": check_scoring_team(tagged, lang, ctx),
-        "passer_receiver": check_passes(tagged, lang, ctx),
+        "passer_receiver": check_passes(tagged, lang, ctx) + check_passer(tagged, lang, ctx),
+        "self_reference": check_self_reference(tagged, lang, ctx),
         "shooter": check_shooter(tagged, lang, ctx),
         "invented_event": check_events(text_n, lang, ctx),
         "comparison": check_comparisons(tagged, lang, ctx),

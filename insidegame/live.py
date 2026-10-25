@@ -62,6 +62,35 @@ async def main_async(args):
         out_dir, name, label = OUT, f"dfl-{args.start}-{args.end}", "Köln–Bayern (real data)"
     moments = analyse(match)["moments"]
     print(f"{len(match['events'])} events, {len(moments)} moments")
+    if args.redo:  # regenerate single lines ("3:11:analyst/en") through the same workflow, keep the rest
+        path = out_dir / f"{name}.json"
+        bundle = json.loads(path.read_text())
+        by_clock = {m["clock"]: m for m in bundle["moments"]}
+        for item in args.redo:
+            clock, variant = item.rsplit(":", 1)
+            p, l = variant.split("/")
+            m = by_clock[clock]
+            earlier = [x["commentary"][p][l]["text"] for x in bundle["moments"] if x["t"] < m["t"]]
+            out, _ = await run_once(client, args.model, match, {"moments": [m["id"]], "variants": [[p, l]], "recap": False,
+                                                               "recent": {f"{p}/{l}": earlier[-3:]}})
+            line = next(x for x in out["analysis"]["moments"] if x["id"] == m["id"])["commentary"][p][l]
+            print(f"{clock} {p}/{l}: {line['seconds']:.1f}s attempts={line['attempts']} {line['source']}\n  was: "
+                  f"{m['commentary'][p][l]['text']}\n  now: {line['text']}")
+            m["commentary"][p][l] = line
+        lines = [c for x in bundle["moments"] for v in x["commentary"].values() for c in v.values()]
+        seconds = [c["seconds"] for c in lines]
+        first = [c["seconds"] for c in lines if c["attempts"] == 1]
+        bundle["latency"]["per_line_seconds"] = {"median": round(statistics.median(seconds), 1),
+                                                 "min": round(min(seconds), 1), "max": round(max(seconds), 1)}
+        bundle["latency"]["first_try_median"] = round(statistics.median(first), 1) if first else None
+        sources = [c["source"].split(":")[0] for c in lines]
+        bundle["pipeline"].update({"agent_lines": sources.count("agent"), "fallback_lines": sources.count("template_fallback"),
+                                   "retried_lines": sum(c["attempts"] > 1 for c in lines),
+                                   "seconds": round(sum(seconds), 1)})
+        bundle["captions"] = {p: {l: schedule(bundle, bundle["events"], bundle["moments"], p, l) for l in LANGS}
+                              for p in PROFILES}
+        path.write_text(json.dumps(bundle, ensure_ascii=False, separators=(",", ":")))
+        return
     if args.recap_only:  # keep the measured lines, regenerate only the recaps
         path = out_dir / f"{name}.json"
         bundle = json.loads(path.read_text())
@@ -150,6 +179,8 @@ def main():
     parser.add_argument("--model", default="qwen3.5:9b")
     parser.add_argument("--remix", type=int, default=None, help="Seed of a stitched synthetic match")
     parser.add_argument("--duration", type=int, default=600)
+    parser.add_argument("--redo", nargs="+", metavar="CLOCK:PROFILE/LANG",
+                        help='Regenerate single lines of an existing bundle, e.g. "3:11:analyst/en"')
     parser.add_argument("--recap-only", action="store_true", help="Regenerate only the recaps of an existing bundle")
     asyncio.run(main_async(parser.parse_args()))
 
