@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 FFMPEG = "node_modules/ffmpeg-static/ffmpeg"
-SCENES = 10
+SCENES = 12
 
 
 def durations():
@@ -16,7 +16,7 @@ def durations():
     for i in range(1, SCENES + 1):
         info = subprocess.run([FFMPEG, "-i", f"vo/s{i}.wav"], capture_output=True, text=True).stderr
         h, m, s = re.search(r"Duration: (\d+):(\d+):([\d.]+)", info).groups()
-        out.append(round(int(h) * 3600 + int(m) * 60 + float(s) + 0.9, 2))
+        out.append(round(int(h) * 3600 + int(m) * 60 + float(s) + 0.6, 2))
     json.dump(out, open("vo/durations.json", "w"))
     print(out, round(sum(out), 1), "s")
 
@@ -33,7 +33,7 @@ def mux():
                             f"clips/s{i}.mp4"], check=True)
             lst.write(f"file 's{i}.mp4'\n")
     subprocess.run([FFMPEG, "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", "clips/list.txt",
-                    "-c", "copy", "-movflags", "+faststart", "draft.mp4"], check=True)
+                    "-c", "copy", "-movflags", "+faststart", "final_candidate.mp4"], check=True)
 
 
 if __name__ == "__main__":

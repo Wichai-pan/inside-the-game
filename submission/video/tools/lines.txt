@@ -1,10 +1,12 @@
-One match, one commentary track, one language. But every fan watching wants something different.
-Inside the Game writes live commentary for each viewer: casual fan or analyst, English or Chinese, following a club or a single player.
-Play-by-play is called the instant an event arrives. A few seconds later, an agent explains why the moment matters, and every line shows the data it was built from.
-The casual fan gets the story. The analyst gets x G, pass difficulty and ball speed. These are two separate texts, not one text with numbers removed.
-The same workflow writes in Chinese. Player names stay exactly as in the data; the fact checker makes sure of it.
-Or follow one player through the match: where they are, how far they have run, and every moment they are involved in.
-Behind it is a Microsoft Agent Framework workflow. An analyst computes the statistics and picks the moments. A narrator agent writes the line. A fact checker rejects any name, number or term not in the data, and an auditor agent extracts who shot, who won the ball and who leads, which code compares with the feed. Failed lines go back for a rewrite.
-The delay you see is the delay we measured: about nine seconds on a laptop. One hundred and two of one hundred and eight lines were written by the agent and passed both checks.
+One match, one commentary, one language. But every fan wants something different.
+Inside the Game is an AI match centre. Agents watch a synthetic football feed, pick the moments that matter, and talk each viewer through them.
+Play-by-play is called the instant an event arrives. Seconds later, an analysis agent explains why the moment matters, in plain words for a casual fan.
+Switch to Analyst, and the same moment comes with the numbers: pass length, ball speed, difficulty, and the event IDs behind every claim.
+The same workflow writes natively in Chinese, with player names kept exactly as in the data.
+Click any player to follow them: touches, distance, top speed, and every moment they are involved in.
+Behind it is a Microsoft Agent Framework workflow. Code computes the statistics, a narrator agent writes each line, a fact checker rejects anything not in the data, and an auditor agent checks who shot, who scored and who leads.
+Here, the first draft quoted eighty percent possession without saying it was only the last minute. The checker sent it back, and the rewrite passed.
+Every delay is measured: about twelve seconds per line on a laptop with a local nine billion parameter model. Lines that play has overtaken are dropped.
+The same match intelligence is an MCP server with seven tools. Here an agent picks the tool it needs and answers from the data.
 After the final whistle, a second workflow plans six storylines from full-match tracking statistics and writes them like a studio pundit, checked the same way.
-The matches are synthetic, built from open tracking data with fictional clubs. Inside the Game: one match, every fan.
+The matches are synthetic, stitched from open tracking data with fictional clubs. Built on Microsoft Agent Framework, ready for Microsoft Foundry. Inside the Game: one match, every fan.

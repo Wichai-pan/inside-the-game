@@ -17,7 +17,7 @@ Suggested category: **Best Multi-Agent System** (also entered for the Grand Priz
 
 **What we built.** Inside the Game turns a stream of synthetic football events into live, explained, personalised commentary and a post-match studio analysis. A match plays on an animated pitch with two caption voices: instant play-by-play, and agent-written analysis that explains why a moment matters. After the final whistle, a pundit-style studio page tells the story of the match from full-match statistics.
 
-**Microsoft technology.** Two **Microsoft Agent Framework** workflows (`agent-framework-core`): a live-commentary graph (`FeedIngestor → Narrator → FactChecker → ClaimAuditor → Producer → RecapWriter`) and a studio graph (`StoryPlanner → SectionWriter ⇄ SectionChecker → StudioProducer`). Both use typed executors, conditional edges for check-and-retry loops, shared workflow state and Agent Framework `Agent` instances. The model runs locally through `agent-framework-ollama` (qwen3.5:9b). The chat client is injected into each workflow, and one setting (`INSIDEGAME_PROVIDER=foundry` or `azure_openai`) switches it to a **Microsoft Foundry** project or **Azure OpenAI** deployment with Entra ID sign-in, without changing the agents. We did not have an Azure subscription, so Foundry is ready to switch to but not used in the published results. An **MCP server** exposes the match intelligence (key moments, player and team stats, commentary, studio analysis) as tools for any MCP client or agent. The site is hosted on **GitHub Pages**, and the code is on **GitHub**.
+**Microsoft technology.** Two **Microsoft Agent Framework** workflows (`agent-framework-core`): a live-commentary graph (`FeedIngestor → Narrator → FactChecker → ClaimAuditor → Producer → RecapWriter`) and a studio graph (`StoryPlanner → SectionWriter ⇄ SectionChecker → StudioProducer`). Both use typed executors, conditional edges for check-and-retry loops, shared workflow state and Agent Framework `Agent` instances. The model runs locally through `agent-framework-ollama` (qwen3.5:9b). The chat client comes from one provider module, and one setting (`INSIDEGAME_PROVIDER=foundry` or `azure_openai`) switches it to a **Microsoft Foundry** project or **Azure OpenAI** deployment with Entra ID sign-in, without changing the agents. We did not have an Azure subscription, so Foundry is ready to switch to but not used in the published results. An **MCP server** exposes the match intelligence (key moments, player and team stats, commentary, studio analysis) as seven tools for any MCP client or agent, and an Agent Framework agent (`ask.py`) uses those tools to answer questions about a match. The site is hosted on **GitHub Pages**, and the code is on **GitHub**.
 
 **What it does.** The same match reaches each fan differently: casual fan or analyst, English or Simplified Chinese, following one club (the other is dimmed) or both, or following a single player throughout the match. Every agent-written line is checked against the data before it is shown: a rule-based fact checker rejects names, numbers, measurements and football terms that are not in the facts, and an auditor agent extracts who the line says shot, won the ball, leads, and in which half, which code then compares with the feed. Failed lines go back to the narrator; after three failures a template line is used.
 
@@ -29,11 +29,12 @@ Suggested category: **Best Multi-Agent System** (also entered for the Grand Priz
 
 **Live replay (`index.html`)**
 - Animated pitch with all 22 fictional players and the ball, at 1×, 2× or 4× speed.
-- Two-voice live captions: play-by-play called the instant each event is known, plus agent analysis placed at the time it would really be ready (measured, around 9 s later). Urgent calls cut in; analysis that play has overtaken is dropped.
-- "Why it matters" reasons and the event IDs behind each line ("data basis"), so every claim can be traced.
+- Two-voice live captions: play-by-play called the instant each event is known, plus agent analysis placed at the time it would really be ready (measured, around 11–12 s later on a laptop). Urgent calls cut in; analysis that play has overtaken is dropped.
+- "Why it matters" reasons and the event IDs behind each line ("Evidence from the feed"), so every claim can be traced; each line also says whether an agent wrote it and on which attempt it passed the checks.
 - Key-moment timeline (goals, chances, pressure that forces a turnover, high regains, difficult passes, spells of control or chaos).
 - Live statistics: possession, shots, xG, pass completion.
-- Personalisation: casual fan or analyst, English or 中文, follow a club, player focus mode with per-player stats (distance, top speed, sprints, ball wins) and a highlight on the pitch.
+- Personalisation: casual fan or analyst, English or 中文, follow a club, player focus mode (click any player on the pitch) with per-player stats (distance, top speed, sprints, ball wins), every involvement and a highlight on the pitch.
+- Analyst view: metric chips for the key event, live team stats, an event feed with derived metrics, the transcript with dropped lines, and the agent workflow panel with measured delays.
 - Automated recap written after the final event.
 
 **Post-match studio (`studio.html`)**
@@ -49,9 +50,9 @@ Suggested category: **Best Multi-Agent System** (also entered for the Grand Priz
 - Static pages replay pre-generated bundles, so the public demo needs no model or server.
 - Model provider chosen by configuration: local Ollama, Microsoft Foundry or Azure OpenAI (`insidegame/providers.py`).
 - MCP server with tools `list_matches`, `get_match_state`, `get_key_moments`, `get_player_stats`, `get_team_stats`, `get_commentary`, `get_studio_analysis` (`insidegame/mcp_server.py`).
-- Unit tests for the analyst, play-by-play, statistics, checkers, providers and MCP server, run by GitHub Actions CI.
-
-<!-- TODO before submitting: the provider switch, MCP server, tests and CI were uncommitted work by other sessions on 25 Oct. Remove these three bullets and the Foundry/MCP sentences in the pitch if they are not merged and pushed. -->
+- Question answering over the match: `python -m insidegame.ask "Who scored the goals?"` runs an Agent Framework agent that discovers and calls the MCP tools (`insidegame/ask.py`).
+- An evaluation script that measures commentary errors by type (scoring team, passer/receiver, shooter, invented events, numbers, possession windows, names) across all bundles (`insidegame/evaluate.py`).
+- 72 pytest tests (analyst, play-by-play, statistics, checkers, providers, MCP server), run by GitHub Actions CI; architecture notes in `docs/ARCHITECTURE.md`.
 
 
 ---
@@ -68,17 +69,20 @@ Suggested category: **Best Multi-Agent System** (also entered for the Grand Priz
 
 ## How it maps to the judging criteria
 
-- **Technological implementation.** A seeded generator for synthetic, football-realistic matches; Microsoft Agent Framework workflows with typed executors and conditional edges; open football analytics libraries (kloppy, databallpy); a documented, modular Python package.
-- **Agentic design and innovation.** Specialised agents with distinct roles (narrator, auditor, recap writer, story planner, pundit) and code-based checkers, coordinated through shared workflow state, with retry loops and template fallback when an agent fails. The auditor agent only *extracts* claims; code makes the judgement, which keeps a small local model honest.
+- **Technological implementation.** A seeded generator for synthetic, football-realistic matches; Microsoft Agent Framework workflows with typed executors and conditional edges; a provider switch to Microsoft Foundry or Azure OpenAI; an MCP server; open football analytics libraries (kloppy, databallpy); a documented, modular Python package with 72 tests and CI.
+- **Agentic design and innovation.** Specialised agents with distinct roles (narrator, auditor, recap writer, story planner, pundit) and code-based checkers, coordinated through shared workflow state, with retry loops and template fallback when an agent fails. The auditor agent only *extracts* claims; code makes the judgement, which keeps a small local model honest. An MCP server lets other agents use the same match intelligence.
 - **Real-world impact.** One feed, many audiences: languages and audience levels a single broadcast cannot serve. Measured live latency shows what it would take to run live.
 - **User experience and presentation.** A single page with the match, captions and stats side by side; a studio page for after the match; every line traceable to its data.
 - **Category adherence (Best Multi-Agent System).** Distinct roles, shared state, handoffs, failure recovery (rewrite loops, fallback), and an end-to-end result (checked, personalised commentary plus a studio analysis) that a single agent prompt did not deliver reliably.
 
 ## Measured results (bundled matches 42, 21, 7)
 
-- 108 commentary lines: 102 written by the narrator agent and passed both checks (33 after a rewrite); 6 template fallbacks.
-- 72 studio texts: 64 written by the studio agent; 8 template fallbacks.
-- Analysis line delay on an Apple laptop with qwen3.5:9b: median 8.6–9.7 s per match (6.6–8.6 s when it passes first time). Play-by-play has no model delay.
+Final scores: match 42 Harbor City 1–2 Ridgeway United, match 21 2–2, match 7 Harbor City 3–2 Ridgeway United.
+
+- 108 live commentary lines: 103 written by the narrator agent and passed both checks (38 of them after a checker rejected the first draft); 5 template fallbacks.
+- 72 studio texts: 65 written by the studio agent; 7 template fallbacks.
+- Accuracy: an evaluation script flags texts with errors such as the wrong scoring team, passer, shooter, invented events, unsupported numbers or a possession share quoted for the wrong time window. An accuracy pass brought flagged agent texts from 40 of 178 (22%) to 1 of 180. The same checks now run during generation, so that figure is partly by construction; reading every line by hand still finds wrong details in roughly 3–4% of live lines, 2 of 12 recaps and about 3 of 19 studio texts checked.
+- Analysis line delay on an Apple laptop with qwen3.5:9b: median 11.0–12.3 s per match (10.3–11.1 s when it passes first time). Play-by-play has no model delay.
 
 ---
 
@@ -101,8 +105,9 @@ The matches never happened, and all clubs and players are fictional. No video fo
 
 - **No live Azure.** We had no Azure subscription, so Microsoft Foundry is not used in the published results. The chat client is injected, so switching is a client change, not a rewrite.
 - **Replay, not live.** The public demo replays pre-generated bundles with their measured timing; no model runs while you watch. Generation runs offline on a laptop.
-- **Latency.** About 9 s per analysis line on a laptop; serving all four viewer versions from one laptop queues them (37–54 s). Live use needs a hosted model.
-- **Checks are not complete.** They cover names, numbers, measurements, unsupported terms, the shooter, the ball winner, the leading team and the half. Other wrong claims (for example who passed to whom) can still get through, and the 9B model sometimes adds interpretation the data does not support.
+- **Latency.** About 11–12 s per analysis line on a laptop, above our 10 s target; serving all four viewer versions from one laptop queues them (43–60 s). Live use needs a hosted model.
+- **Checks are not complete.** They cover names, numbers, measurements, unsupported terms, the shooter, the scoring team, passer and receiver, the ball winner, the leading team, the half and possession windows. A hand read still finds a few wrong details (for example a free kick credited to the wrong player), and the 9B model sometimes adds interpretation the data does not support.
+- **`ask.py` answers are not fact-checked.** The question-answering agent uses the MCP tools but its answer does not go through the checkers, and the 9B model can misread numbers in open questions.
 - **Stitching seams.** Restarts between spells are blended, not real; team shapes can change across a seam. Statistics describe the generated match only.
 - **Two languages.** English and Simplified Chinese only so far.
 - **No auto-eventing.** Events come from the data; we do not detect them from video.

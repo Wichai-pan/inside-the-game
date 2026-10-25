@@ -6,19 +6,20 @@ No login, install or API key is needed. The public demo is a static site; it rep
 
 Open **https://wichai-pan.github.io/inside-the-game/** in a desktop browser (Chrome, Edge, Safari or Firefox).
 
-1. **Watch a match (40 s).** Leave *Match 42* selected. Click **4×** under the pitch, then **▶**. The left panel shows the pitch and live stats; the right panel shows the live commentary. Notice the two voices: play-by-play appears immediately, and an agent-written analysis line appears a few seconds later, labelled with how many attempts it needed to pass the checks. Below it, *Why it matters* lists the reasons and *Data basis* lists the events behind the line.
-2. **Casual vs. analyst (15 s).** Switch **Viewer** between *Casual fan* and *Analyst*. The analyst version uses numbers (xG, pass difficulty, ball speed); the casual version tells the story in plain language.
-3. **Another language (10 s).** Click **中文**. Commentary, reasons, stats and recap switch to Simplified Chinese, generated (not machine-translated) by the same workflow. Player names stay in their original form, which the fact checker enforces.
-4. **Follow a player (15 s).** In **Player focus**, choose e.g. *#10 Callum Ashby · Striker*. The player is highlighted on the pitch and a player card shows distance, top speed, sprints and ball wins. **Follow** picks a club and dims the other club's players and moments.
-5. **Recap (10 s).** Drag the timeline to the end. The *Automated recap* is written after the final event.
-6. **Post-match studio (30 s).** Click **Post-match studio →** (or open https://wichai-pan.github.io/inside-the-game/studio.html). Read the six storylines (verdict, turning point, momentum, tactics, fairness of the score, standout players) with their graphics. Each section says whether the studio agent's text passed first time, after a rewrite, or was replaced by a template. Try *Analyst* and *中文* here too.
+1. **Watch a match (40 s).** Leave *Match 42* selected and press the big green play button on the pitch (or Space), then pick **4×** under the pitch. The scoreboard, pitch and possession bar update live; the *Live commentary* panel shows the two voices: play-by-play appears on the pitch immediately, and the analysis agent's line follows with the delay we measured ("The analyst agent is writing this line… ready in 8.2 s"). Each line says whether an agent wrote it and how many attempts it needed to pass the checks.
+2. **Casual vs. analyst (20 s).** Switch **Viewer** to *Analyst*. The same moment now comes with metric chips (shot distance, shot speed, xG), *Why it matters*, *Evidence from the feed* with event IDs, live team stats, an event feed with derived metrics, and the *Agent workflow* panel with the measured delay per line. The *Commentary transcript* shows lines that were dropped because play had moved on.
+3. **Another language (10 s).** Click **中文**. Commentary, reasons, stats and recap switch to Simplified Chinese, written natively by the same workflow (not machine-translated). Player names stay in Latin letters, which the fact checker enforces.
+4. **Follow a player (15 s).** Click any numbered dot on the pitch (or use **Player focus**). A player card shows touches, passes, distance, top speed, ball wins and every moment the player is involved in; *Next involvement ›* jumps to it. **Follow** picks a club and dims the other club's players and moments.
+5. **Key moments and recap (10 s).** Click a moment in *Key moments* to jump to it, or drag the timeline to the end to read the *Automated recap*, written after the final event.
+6. **Post-match studio (30 s).** Click **Studio** in the top bar. Read the six numbered storylines (verdict, turning point, momentum, tactics, fairness of the score, standout players) with their graphics. Each section says whether the studio agent's text passed first time, after a rewrite, or was replaced by a template. Try *Analyst* and *中文* here too.
+7. **How it works (optional).** The **How it works** page explains the workflow, the synthetic data and its attribution, and what the checks do and do not cover.
 
-Matches 21 and 7 in the **Match** menu are other seeds with different storylines.
+Matches 21 (2–2) and 7 (3–2) in the **Match** menu are other seeds with different storylines; match 42 ends 1–2.
 
 ## What to look for
 
 - Every agent line is checked against the data. A rule-based fact checker rejects names, numbers, measurements and terms not in the facts; an auditor agent extracts who the line says shot, won the ball and leads, and code compares that with the feed.
-- The delay before analysis appears is the delay measured on our laptop (median about 9 s with a local 9B model), not an animation.
+- The delay before analysis appears is the delay measured on our laptop (median 11–12 s with a local 9B model), not an animation.
 - All clubs and players are fictional. See the project description for how the synthetic matches are built and attributed.
 
 ## Run it locally
@@ -48,9 +49,20 @@ python3 -m http.server 8000 --directory docs
 
 Generating a new synthetic match from scratch also needs the DFL open data files under `data/dfl/<match id>/` (`meta.xml`, `events.xml`, `tracking.xml`), downloaded from [figshare](https://springernature.figshare.com/articles/dataset/An_integrated_dataset_of_spatiotemporal_and_event_data_in_elite_soccer/28196177) (CC BY 4.0). The three bundled matches are already in the repository, so this step is optional.
 
-Regenerating one 10-minute match with all four viewer versions took about 7 minutes of model time on an Apple laptop (match 42: 36 lines, 394 s).
+Regenerating one 10-minute match with all four viewer versions took about 10 minutes of model time on an Apple laptop (match 42: 36 lines, 580 s).
+
+### Tests, MCP server and question answering
+
+```sh
+.venv/bin/python -m pytest                                   # 72 tests, no model needed
+.venv/bin/python -m insidegame.mcp_server                    # MCP server over stdio (7 tools)
+.venv/bin/python -m insidegame.ask "Who scored the goals, and how good were the chances?"
+```
+
+`ask.py` starts the MCP server itself, lets an Agent Framework agent choose tools, and prints which tools it called. To use Microsoft Foundry instead of Ollama, set `INSIDEGAME_PROVIDER=foundry`, `FOUNDRY_PROJECT_ENDPOINT` and `FOUNDRY_MODEL` and sign in with `az login` (see `insidegame/providers.py`; not run live by us).
 
 ## Known issues
 
 - The demo is a replay: no model runs in the browser.
 - The site is designed for desktop width; it works on a phone but the pitch is small.
+- `ask.py` answers are not fact-checked; open questions can get wrong numbers from the 9B model.
